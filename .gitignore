@@ -1,0 +1,32 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Node / React / Vite
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Build / caches
+.vite/
+coverage/
+
+# macOS
+.DS_Store
+
+# IDE / editor
+.vscode/
+.idea/
+.agents/

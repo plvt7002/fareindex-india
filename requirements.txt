@@ -1,0 +1,10 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pandas==2.3.2
+apscheduler==3.11.0
+httpx==0.28.1
+python-dotenv==1.1.1
+playwright==1.55.0
+playwright-stealth>=2.0.0
+pytest>=8.0.0
+
