@@ -1,0 +1,42 @@
+name: FareIndex Scraper Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-scraper:
+    name: Run Playwright Scraper Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers and Linux dependencies
+        run: |
+          playwright install --with-deps chromium
+
+      - name: Run integrated Playwright scraper
+        run: |
+          python -c "import os; os.environ['FARE_PROVIDER']='playwright'; from app.scrape_service import scrape_all_routes; print(scrape_all_routes())"
+
+      - name: Report scraper execution status
+        if: success()
+        run: |
+          echo "✅ FareIndex Playwright scraper completed successfully on GitHub Actions runner."
+
+      - name: Report scraper failure
+        if: failure()
+        run: |
+          echo "❌ FareIndex Playwright scraper failed on GitHub Actions runner."
