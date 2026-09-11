@@ -8,6 +8,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASE_PATH = os.getenv("DATABASE_PATH", "data/fareindex.db")
 DB_PATH = (BASE_DIR / DATABASE_PATH).resolve()
 
+TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL", "").strip()
+TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN", "").strip()
+
+def is_turso_configured() -> bool:
+    """Returns True ONLY when BOTH TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are present and non-empty."""
+    return bool(TURSO_DATABASE_URL and TURSO_AUTH_TOKEN)
+
+def get_turso_https_url() -> str:
+    """
+    Normalizes a libsql:// or http:// URL to https:// protocol
+    to avoid WebSocket handshake issues on regional endpoints.
+    """
+    import urllib.parse
+    if not TURSO_DATABASE_URL:
+        return ""
+    parsed = urllib.parse.urlparse(TURSO_DATABASE_URL)
+    netloc = parsed.netloc or parsed.path
+    if "://" in netloc:
+        netloc = netloc.split("://", 1)[1]
+    if ":" in netloc and parsed.port in (443, 80):
+        netloc = netloc.split(":", 1)[0]
+    return f"https://{netloc}"
+
 FARE_PROVIDER = os.getenv("FARE_PROVIDER", "demo").strip().lower()
 SCRAPE_INTERVAL_HOURS = int(os.getenv("SCRAPE_INTERVAL_HOURS", "24"))
 

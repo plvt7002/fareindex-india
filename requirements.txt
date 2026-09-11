@@ -7,4 +7,5 @@ python-dotenv==1.1.1
 playwright==1.55.0
 playwright-stealth>=2.0.0
 pytest>=8.0.0
+libsql-client>=0.3.0
 

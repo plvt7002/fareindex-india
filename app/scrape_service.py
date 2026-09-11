@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 
 from .config import TRACKED_ROUTES, FARE_PROVIDER
-from .db import db
+from .db import db, init_db
 from .providers import get_provider
 from .index_engine import rebuild_route_indices
 
@@ -197,6 +197,7 @@ def scrape_all_routes() -> dict[str, Any]:
     validation_reports: list[dict[str, Any]] = []
 
     try:
+        init_db()
         provider = get_provider(FARE_PROVIDER)
         seen_keys: set[tuple[Any, ...]] = set()
 

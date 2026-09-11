@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .config import ROUTE_WEIGHTS, DEFAULT_ROUTE_WEIGHTS, TRACKED_ROUTES
-from .db import connect
+from .db import connect, query_df
 
 def assign_lead_time_bucket(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -179,7 +179,7 @@ def get_public_snapshot_dataframe(
         query += " AND UPPER(route) = ?"
         params.append(target_route.upper())
 
-    df = pd.read_sql_query(query, conn, params=params)
+    df = query_df(query, params=params, conn=conn)
     if df.empty:
         return df
 
@@ -254,7 +254,7 @@ def rebuild_route_indices() -> dict[str, Any]:
                     if air_v.get("is_eligible"):
                         airline_factors_map[air_k] = air_v.get("effective_factor", global_fallback)
 
-                df_hist_records = pd.read_sql_query("""
+                df_hist_records = query_df("""
                     SELECT id, route, airline, price_inr, travel_date,
                            SUBSTR(search_timestamp, 1, 10) as observation_date
                     FROM raw_prices
@@ -263,7 +263,7 @@ def rebuild_route_indices() -> dict[str, Any]:
                       AND (fare_type = 'ROUND_TRIP_LEGACY' OR fare_type = 'UNKNOWN')
                       AND SUBSTR(search_timestamp, 1, 10) < '2026-09-08'
                     ORDER BY observation_date
-                """, conn)
+                """, conn=conn)
 
                 hist_daily_medians = []
                 hist_records_list = []
@@ -377,11 +377,11 @@ def get_national_composite_index() -> dict[str, Any]:
     """
     conn = connect()
     try:
-        df = pd.read_sql_query("""
+        df = query_df("""
             SELECT route, observation_date, avg_fare, median_fare, baseline_fare, index_value
             FROM index_values
             ORDER BY observation_date, route
-        """, conn)
+        """, conn=conn)
 
         if df.empty:
             return {
@@ -1068,17 +1068,17 @@ def calculate_empirical_matched_pairs_ratio(
         close_conn = True
     try:
         route_clean = route.upper()
-        df_legacy = pd.read_sql_query("""
+        df_legacy = query_df("""
             SELECT route, airline, price_inr, travel_date, departure_time, arrival_time
             FROM raw_prices
             WHERE route = ? AND fare_type = 'ROUND_TRIP_LEGACY' AND SUBSTR(search_timestamp, 1, 10) = ?
-        """, conn, params=(route_clean, observation_date))
+        """, params=(route_clean, observation_date), conn=conn)
 
-        df_oneway = pd.read_sql_query("""
+        df_oneway = query_df("""
             SELECT route, airline, price_inr, travel_date, departure_time, arrival_time
             FROM raw_prices
             WHERE route = ? AND fare_type = 'ONE_WAY' AND domestic_eligibility = 'VALID' AND SUBSTR(search_timestamp, 1, 10) = ?
-        """, conn, params=(route_clean, observation_date))
+        """, params=(route_clean, observation_date), conn=conn)
 
         def trim_mean(arr: np.ndarray, p: float) -> float:
             a = np.sort(arr)
@@ -1355,7 +1355,7 @@ def get_route_movement_series(target_route: str = "HYD-DEL") -> dict[str, Any]:
                 airline_factors_map[air_k] = air_v.get("effective_factor", global_fallback)
 
         # 2. Historical flight records normalization (Aug 28, Aug 29, Aug 30, Aug 31, Sep 7)
-        df_hist_records = pd.read_sql_query("""
+        df_hist_records = query_df("""
             SELECT 
                 id, route, airline, price_inr, travel_date,
                 SUBSTR(search_timestamp, 1, 10) as observation_date
@@ -1365,7 +1365,7 @@ def get_route_movement_series(target_route: str = "HYD-DEL") -> dict[str, Any]:
               AND (fare_type = 'ROUND_TRIP_LEGACY' OR fare_type = 'UNKNOWN')
               AND SUBSTR(search_timestamp, 1, 10) < '2026-09-08'
             ORDER BY observation_date
-        """, conn)
+        """, conn=conn)
 
         series = []
         hist_daily_medians = []
