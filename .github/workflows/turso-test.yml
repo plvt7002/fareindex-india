@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-turso-connection:
-    name: Test Turso Database Connection
+    name: Test Turso Database Connection (HTTPS)
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +23,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install libsql-client
 
-      - name: Test Turso database connection
+      - name: Test Turso database connection over HTTPS
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
@@ -31,12 +31,13 @@ jobs:
           python - << 'EOF'
           import os
           import sys
+          import urllib.parse
           import libsql_client
 
-          db_url = os.environ.get("TURSO_DATABASE_URL", "").strip()
+          raw_url = os.environ.get("TURSO_DATABASE_URL", "").strip()
           auth_token = os.environ.get("TURSO_AUTH_TOKEN", "").strip()
 
-          if not db_url:
+          if not raw_url:
               print("❌ Error: TURSO_DATABASE_URL environment variable is missing.")
               sys.exit(1)
 
@@ -44,31 +45,48 @@ jobs:
               print("❌ Error: TURSO_AUTH_TOKEN environment variable is missing.")
               sys.exit(1)
 
-          # Non-sensitive sanitized URL logging (showing protocol and domain, never auth credentials)
-          url_preview = db_url.split("?")[0]
-          print(f"Initiating connection to Turso database target: {url_preview}")
+          # Helper to redact sensitive token from any output or exception trace
+          def sanitize(msg: str) -> str:
+              if auth_token and auth_token in msg:
+                  return msg.replace(auth_token, "[REDACTED_AUTH_TOKEN]")
+              return msg
+
+          # Normalize database URL to HTTPS protocol to avoid WebSocket handshake issues
+          parsed = urllib.parse.urlparse(raw_url)
+          netloc = parsed.netloc or parsed.path
+          if "://" in netloc:
+              netloc = netloc.split("://", 1)[1]
+          if ":" in netloc and parsed.port in (443, 80):
+              netloc = netloc.split(":", 1)[0]
+
+          https_url = f"https://{netloc}"
+
+          # Non-sensitive logging of endpoint target
+          print(f"Connecting to Turso database via HTTPS endpoint: {https_url}")
 
           try:
-              client = libsql_client.create_client_sync(url=db_url, auth_token=auth_token)
+              client = libsql_client.create_client_sync(url=https_url, auth_token=auth_token)
               result = client.execute("SELECT 1 AS connection_status")
+              client.close()
+
               if result and len(result.rows) > 0 and result.rows[0][0] == 1:
-                  print("✅ Successfully connected to Turso database!")
+                  print("✅ Successfully connected to Turso database over HTTPS!")
                   print("✅ Query 'SELECT 1 AS connection_status' returned: 1")
               else:
                   print(f"⚠️ Query executed but returned unexpected result: {result.rows}")
                   sys.exit(1)
-              client.close()
           except Exception as exc:
-              print(f"❌ Connection failed: {exc}")
+              clean_error = sanitize(str(exc))
+              print(f"❌ Connection failed: {clean_error}")
               sys.exit(1)
           EOF
 
       - name: Report connection status
         if: success()
         run: |
-          echo "✅ Turso connection test completed successfully."
+          echo "✅ Turso HTTPS connection test completed successfully."
 
       - name: Report connection failure
         if: failure()
         run: |
-          echo "❌ Turso connection test failed on GitHub Actions runner."
+          echo "❌ Turso HTTPS connection test failed on GitHub Actions runner."
