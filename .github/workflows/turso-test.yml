@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-turso-connection:
-    name: Test Turso Database Connection (HTTPS)
+    name: Test Turso Database Connection & Read-Only Audit (HTTPS)
     runs-on: ubuntu-latest
 
     steps:
@@ -18,10 +18,10 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install Turso client dependency
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install libsql-client
+          pip install libsql-client pandas
 
       - name: Test Turso database connection over HTTPS
         env:
@@ -45,7 +45,6 @@ jobs:
               print("❌ Error: TURSO_AUTH_TOKEN environment variable is missing.")
               sys.exit(1)
 
-          # Helper to redact sensitive token from any output or exception trace
           def sanitize(msg: str) -> str:
               if auth_token and auth_token in msg:
                   return msg.replace(auth_token, "[REDACTED_AUTH_TOKEN]")
@@ -60,9 +59,8 @@ jobs:
               netloc = netloc.split(":", 1)[0]
 
           https_url = f"https://{netloc}"
-
-          # Non-sensitive logging of endpoint target
-          print(f"Connecting to Turso database via HTTPS endpoint: {https_url}")
+          masked_host = netloc[:4] + "..." + netloc[-8:] if len(netloc) > 12 else "[turso-endpoint]"
+          print(f"Connecting to Turso database via HTTPS endpoint: https://{masked_host}")
 
           try:
               client = libsql_client.create_client_sync(url=https_url, auth_token=auth_token)
@@ -81,12 +79,300 @@ jobs:
               sys.exit(1)
           EOF
 
-      - name: Report connection status
+      - name: Run Read-Only Turso Data Audit
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          python - << 'EOF'
+          import os
+          import sys
+          import datetime
+          import urllib.parse
+          import pandas as pd
+          import numpy as np
+          import libsql_client
+
+          raw_url = os.environ.get("TURSO_DATABASE_URL", "").strip()
+          auth_token = os.environ.get("TURSO_AUTH_TOKEN", "").strip()
+
+          if not raw_url or not auth_token:
+              print("❌ Error: Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN secret.")
+              sys.exit(1)
+
+          def sanitize(msg: str) -> str:
+              if auth_token and auth_token in msg:
+                  return msg.replace(auth_token, "[REDACTED_AUTH_TOKEN]")
+              return msg
+
+          parsed = urllib.parse.urlparse(raw_url)
+          netloc = parsed.netloc or parsed.path
+          if "://" in netloc:
+              netloc = netloc.split("://", 1)[1]
+          if ":" in netloc and parsed.port in (443, 80):
+              netloc = netloc.split(":", 1)[0]
+
+          https_url = f"https://{netloc}"
+          masked_host = netloc[:4] + "..." + netloc[-8:] if len(netloc) > 12 else "[turso-endpoint]"
+          print(f"🔒 Connecting to Turso database via HTTPS: https://{masked_host} (READ-ONLY AUDIT)")
+
+          try:
+              client = libsql_client.create_client_sync(url=https_url, auth_token=auth_token)
+          except Exception as exc:
+              print(f"❌ Failed to connect to Turso: {sanitize(str(exc))}")
+              sys.exit(1)
+
+          def query_df(sql: str, params: list = None) -> pd.DataFrame:
+              p = params or []
+              try:
+                  res = client.execute(sql, p)
+                  if not res.rows:
+                      return pd.DataFrame([], columns=list(res.columns))
+                  data = [list(r) for r in res.rows]
+                  return pd.DataFrame(data, columns=list(res.columns))
+              except Exception as exc:
+                  clean_err = sanitize(str(exc))
+                  raise RuntimeError(f"Query error: {clean_err}") from None
+
+          print("=" * 80)
+          print(" TURSO / FAREINDEX READ-ONLY PRODUCTION DATA AUDIT REPORT")
+          print("=" * 80)
+
+          try:
+              df_raw = query_df("SELECT * FROM raw_prices")
+          except Exception as exc:
+              print(f"❌ Failed to query raw_prices: {exc}")
+              client.close()
+              sys.exit(1)
+
+          try:
+              df_idx = query_df("SELECT * FROM index_values")
+          except Exception as exc:
+              print(f"⚠️ Could not query index_values: {exc}")
+              df_idx = pd.DataFrame()
+
+          client.close()
+
+          # 1. Total rows
+          print(f"\n1. TABLE OVERVIEW")
+          print(f"   - raw_prices total rows  : {len(df_raw)}")
+          print(f"   - index_values total rows: {len(df_idx)}")
+
+          if df_raw.empty:
+              print("\n⚠️ raw_prices table is empty. No data to audit.")
+              sys.exit(0)
+
+          # Parse search timestamp and observation date
+          df_raw['search_dt'] = pd.to_datetime(df_raw['search_timestamp'], format='mixed', utc=True, errors='coerce')
+          df_raw['obs_date'] = df_raw['search_dt'].dt.date
+
+          # Parse travel date
+          df_raw['travel_dt'] = pd.to_datetime(df_raw['travel_date'], format='mixed', errors='coerce')
+          df_raw['travel_date_clean'] = df_raw['travel_dt'].dt.date
+          df_raw['has_travel_date'] = df_raw['travel_date_clean'].notna()
+
+          # Calculate lead time in calendar days
+          df_raw['lead_time_cal_days'] = np.where(
+              df_raw['has_travel_date'] & df_raw['obs_date'].notna(),
+              (df_raw['travel_date_clean'] - df_raw['obs_date']).apply(lambda x: x.days if pd.notna(x) else np.nan),
+              np.nan
+          )
+
+          # 2. Provenance / Source counts
+          print(f"\n2. PROVENANCE & SOURCE COUNTS")
+          source_counts = df_raw['source'].fillna('UNKNOWN').value_counts()
+          for src, count in source_counts.items():
+              pct = (count / len(df_raw)) * 100
+              print(f"   - {src:<30}: {count:>6} rows ({pct:>5.1f}%)")
+
+          if 'fare_type' in df_raw.columns:
+              print(f"\n   Fare Types:")
+              for ft, count in df_raw['fare_type'].fillna('UNKNOWN').value_counts().items():
+                  pct = (count / len(df_raw)) * 100
+                  print(f"     * {ft:<25}: {count:>6} rows ({pct:>5.1f}%)")
+
+          if 'domestic_eligibility' in df_raw.columns:
+              print(f"\n   Domestic Eligibility:")
+              for de, count in df_raw['domestic_eligibility'].fillna('UNKNOWN').value_counts().items():
+                  pct = (count / len(df_raw)) * 100
+                  print(f"     * {de:<25}: {count:>6} rows ({pct:>5.1f}%)")
+
+          # 3, 6, 7. Observation Date Analysis
+          valid_obs = df_raw['obs_date'].dropna()
+          min_obs_date = valid_obs.min() if not valid_obs.empty else None
+          max_obs_date = valid_obs.max() if not valid_obs.empty else None
+
+          print(f"\n3. OBSERVATION DATE & TEMPORAL ANALYSIS")
+          print(f"   - Earliest observation date : {min_obs_date}")
+          print(f"   - Latest observation date   : {max_obs_date}")
+          if min_obs_date and max_obs_date:
+              span_days = (max_obs_date - min_obs_date).days + 1
+              print(f"   - Overall observation span  : {span_days} calendar days")
+              print(f"   - Total distinct obs dates  : {valid_obs.nunique()}")
+
+              print(f"\n   Recent observation counts (relative to latest dataset date {max_obs_date}):")
+              for days in [1, 3, 7, 14, 30]:
+                  cutoff = max_obs_date - datetime.timedelta(days=days - 1)
+                  count = (valid_obs >= cutoff).sum()
+                  pct = (count / len(df_raw)) * 100
+                  print(f"     * Last {days:>2} days (>= {cutoff}) : {count:>6} rows ({pct:>5.1f}%)")
+
+          # 8, 9, 10. Travel Date & Lead-Time Analysis
+          rows_with_td = df_raw['has_travel_date'].sum()
+          rows_without_td = len(df_raw) - rows_with_td
+          pct_known_td = (rows_with_td / len(df_raw)) * 100 if len(df_raw) > 0 else 0
+
+          valid_travel_dates = df_raw['travel_date_clean'].dropna()
+          min_travel_date = valid_travel_dates.min() if not valid_travel_dates.empty else None
+          max_travel_date = valid_travel_dates.max() if not valid_travel_dates.empty else None
+
+          print(f"\n4. TRAVEL DATE & LEAD-TIME DISTRIBUTION")
+          print(f"   - Rows with known travel_date   : {rows_with_td:>6} ({pct_known_td:>5.1f}%)")
+          print(f"   - Rows without travel_date      : {rows_without_td:>6} ({100 - pct_known_td:>5.1f}%)")
+          print(f"   - Earliest travel date          : {min_travel_date}")
+          print(f"   - Latest travel date            : {max_travel_date}")
+
+          valid_leads = df_raw['lead_time_cal_days'].dropna()
+          if not valid_leads.empty:
+              print(f"\n   Lead-time distribution summary (calendar days: travel_date - obs_date):")
+              print(f"     * Min    : {valid_leads.min():.0f} days")
+              print(f"     * P10    : {valid_leads.quantile(0.10):.0f} days")
+              print(f"     * P25    : {valid_leads.quantile(0.25):.0f} days")
+              print(f"     * Median : {valid_leads.median():.0f} days")
+              print(f"     * Mean   : {valid_leads.mean():.1f} days")
+              print(f"     * P75    : {valid_leads.quantile(0.75):.0f} days")
+              print(f"     * P90    : {valid_leads.quantile(0.90):.0f} days")
+              print(f"     * Max    : {valid_leads.max():.0f} days")
+
+              bins = [-999, 0, 1, 3, 7, 14, 21, 30, 60, 9999]
+              labels = ['<0 (Anomaly)', '0d (Same-day)', '1-3d', '4-7d', '8-14d', '15-21d', '22-30d', '31-60d', '>60d']
+              binned = pd.cut(valid_leads, bins=bins, labels=labels).value_counts().sort_index()
+              print(f"\n   Lead-time distribution buckets:")
+              for bucket, count in binned.items():
+                  if count > 0:
+                      pct = (count / len(valid_leads)) * 100
+                      print(f"     * {bucket:<15}: {count:>6} ({pct:>5.1f}%)")
+
+          # 3, 4, 5, 11, 12, 13, 14, 15, 16. Route-Level Statistics
+          unique_routes = sorted(df_raw['route'].dropna().unique())
+          print(f"\n5. ROUTE-LEVEL DETAILED AGGREGATE STATISTICS ({len(unique_routes)} unique routes)")
+          print("=" * 80)
+
+          for r in unique_routes:
+              rdf = df_raw[df_raw['route'] == r]
+              n_obs = len(rdf)
+              r_obs_dates = sorted(rdf['obs_date'].dropna().unique())
+              n_obs_dates = len(r_obs_dates)
+              earliest_obs = r_obs_dates[0] if r_obs_dates else None
+              latest_obs = r_obs_dates[-1] if r_obs_dates else None
+
+              r_travel_dates = sorted(rdf['travel_date_clean'].dropna().unique())
+              n_travel_dates = len(r_travel_dates)
+              earliest_travel = r_travel_dates[0] if r_travel_dates else None
+              latest_travel = r_travel_dates[-1] if r_travel_dates else None
+
+              # Unique route + travel_date combinations
+              rdf_valid_td = rdf.dropna(subset=['travel_date_clean'])
+              unique_route_travel = rdf_valid_td.groupby('travel_date_clean').size()
+              n_unique_route_travel = len(unique_route_travel)
+              obs_per_rt_min = unique_route_travel.min() if not unique_route_travel.empty else 0
+              obs_per_rt_med = unique_route_travel.median() if not unique_route_travel.empty else 0
+              obs_per_rt_mean = unique_route_travel.mean() if not unique_route_travel.empty else 0
+              obs_per_rt_max = unique_route_travel.max() if not unique_route_travel.empty else 0
+
+              # Unique Airlines
+              airlines = [str(a) for a in rdf['airline'].dropna().unique() if str(a).strip()]
+
+              # Price stats
+              prices = rdf['price_inr'].dropna()
+              p_count = len(prices)
+              p_min = prices.min() if p_count > 0 else 0
+              p_25 = prices.quantile(0.25) if p_count > 0 else 0
+              p_med = prices.median() if p_count > 0 else 0
+              p_mean = prices.mean() if p_count > 0 else 0
+              p_75 = prices.quantile(0.75) if p_count > 0 else 0
+              p_max = prices.max() if p_count > 0 else 0
+              p_std = prices.std() if p_count > 1 else 0
+
+              # Lead time stats by route
+              r_leads = rdf['lead_time_cal_days'].dropna()
+              lt_min = r_leads.min() if not r_leads.empty else np.nan
+              lt_p25 = r_leads.quantile(0.25) if not r_leads.empty else np.nan
+              lt_med = r_leads.median() if not r_leads.empty else np.nan
+              lt_mean = r_leads.mean() if not r_leads.empty else np.nan
+              lt_p75 = r_leads.quantile(0.75) if not r_leads.empty else np.nan
+              lt_max = r_leads.max() if not r_leads.empty else np.nan
+
+              lt_min_display = f"{lt_min:.0f}" if pd.notna(lt_min) else "N/A"
+              lt_p25_display = f"{lt_p25:.0f}" if pd.notna(lt_p25) else "N/A"
+              lt_med_display = f"{lt_med:.0f}" if pd.notna(lt_med) else "N/A"
+              lt_mean_display = f"{lt_mean:.1f}" if pd.notna(lt_mean) else "N/A"
+              lt_p75_display = f"{lt_p75:.0f}" if pd.notna(lt_p75) else "N/A"
+              lt_max_display = f"{lt_max:.0f}" if pd.notna(lt_max) else "N/A"
+
+              # Observation date gap / continuity
+              max_gap = 0
+              if len(r_obs_dates) > 1:
+                  gaps = [(r_obs_dates[i] - r_obs_dates[i-1]).days for i in range(1, len(r_obs_dates))]
+                  max_gap = max(gaps) if gaps else 0
+
+              has_td_pct = (rdf['has_travel_date'].sum() / n_obs) * 100 if n_obs > 0 else 0
+
+              print(f"\n--- Route: {r} ---")
+              print(f"  • Total observations (rows)       : {n_obs}")
+              print(f"  • Observation dates range         : {earliest_obs} to {latest_obs} ({n_obs_dates} distinct days, max gap between obs: {max_gap}d)")
+              print(f"  • Travel dates range              : {earliest_travel} to {latest_travel} ({n_travel_dates} distinct travel dates, {has_td_pct:.1f}% coverage)")
+              print(f"  • Unique Route + Travel_Date pairs: {n_unique_route_travel}")
+              print(f"  • Observations per Route+Travel_Dt: min={obs_per_rt_min}, med={obs_per_rt_med:.1f}, mean={obs_per_rt_mean:.1f}, max={obs_per_rt_max}")
+              print(f"  • Lead-time by route (days)       : min={lt_min_display}, p25={lt_p25_display}, med={lt_med_display}, mean={lt_mean_display}, p75={lt_p75_display}, max={lt_max_display}")
+              print(f"  • Unique airlines ({len(airlines)})            : {', '.join(airlines) if airlines else 'None'}")
+              print(f"  • Price statistics (INR)          : count={p_count}, min=₹{p_min:,.0f}, p25=₹{p_25:,.0f}, median=₹{p_med:,.0f}, mean=₹{p_mean:,.0f}, p75=₹{p_75:,.0f}, max=₹{p_max:,.0f} (std=₹{p_std:,.0f})")
+
+          # 18. Actual Longitudinal Coverage Breakdown
+          print(f"\n\n6. ACTUAL LONGITUDINAL COVERAGE (OBSERVATIONS BY OBSERVATION DATE PER ROUTE)")
+          print("=" * 80)
+          obs_by_date = df_raw.groupby(['obs_date', 'route']).size().unstack(fill_value=0)
+          print(obs_by_date.to_string())
+
+          # 17. Data Quality Issues Relevant to Forecasting
+          print(f"\n\n7. DATA QUALITY OBSERVATIONS RELEVANT TO FORECASTING")
+          print("=" * 80)
+
+          if 'domestic_eligibility' in df_raw.columns:
+              invalid_count = (df_raw['domestic_eligibility'] == 'INVALID').sum()
+              valid_count = (df_raw['domestic_eligibility'] == 'VALID').sum()
+              unknown_count = (df_raw['domestic_eligibility'] == 'UNKNOWN').sum()
+              print(f"   [A] Domestic Route Integrity:")
+              print(f"       - Valid domestic observations   : {valid_count} ({valid_count/len(df_raw)*100:.1f}%)")
+              print(f"       - Invalid (transit/legacy) rows : {invalid_count} ({invalid_count/len(df_raw)*100:.1f}%)")
+              print(f"       - Unknown eligibility rows      : {unknown_count} ({unknown_count/len(df_raw)*100:.1f}%)")
+
+          price_zeros = (df_raw['price_inr'] <= 0).sum()
+          price_nulls = df_raw['price_inr'].isna().sum()
+          print(f"   [B] Price Integrity:")
+          print(f"       - Zero or negative prices       : {price_zeros}")
+          print(f"       - Missing / null prices         : {price_nulls}")
+
+          dup_cols = [c for c in ['route', 'airline', 'travel_date', 'search_timestamp', 'price_inr'] if c in df_raw.columns]
+          dups = df_raw.duplicated(subset=dup_cols, keep=False).sum()
+          print(f"   [C] Exact Duplicate Observations:")
+          print(f"       - Rows sharing identical route, airline, travel_date, ts, price: {dups} ({(dups/len(df_raw)*100 if len(df_raw)>0 else 0):.1f}%)")
+
+          lead_neg = (df_raw['lead_time_cal_days'] < 0).sum()
+          print(f"   [D] Lead-Time Temporal Consistency:")
+          print(f"       - Observations with travel_date < search_date (anomalies): {lead_neg}")
+
+          print("\n" + "=" * 80)
+          print(" END OF AUDIT REPORT")
+          print("=" * 80 + "\n")
+          EOF
+
+      - name: Report status
         if: success()
         run: |
-          echo "✅ Turso HTTPS connection test completed successfully."
+          echo "✅ Turso HTTPS connection and read-only audit completed successfully."
 
-      - name: Report connection failure
+      - name: Report failure
         if: failure()
         run: |
-          echo "❌ Turso HTTPS connection test failed on GitHub Actions runner."
+          echo "❌ Turso workflow run failed on GitHub Actions runner."
