@@ -88,7 +88,7 @@ export function Header({
           <div className="flex items-center gap-2.5 text-xs">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100/90 border border-slate-200/90 text-[11px] font-sans text-slate-700">
               <span className="w-2 h-2 rounded-full bg-teal-600" />
-              <span className="font-medium text-slate-600">Latest observation ·</span>
+              <span className="font-medium text-slate-600">Market data through ·</span>
               <span className="font-mono font-semibold text-slate-900">{formattedSnapshotDate}</span>
             </div>
 
@@ -96,8 +96,8 @@ export function Header({
               onClick={onRefresh}
               disabled={isRefreshing}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs transition-all disabled:opacity-50 cursor-pointer font-semibold text-xs active:scale-95"
-              title="Refresh verified market data"
-              aria-label="Refresh market data"
+              title="Refresh market analytics dashboard"
+              aria-label="Refresh market analytics"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-teal-700' : 'text-slate-500'}`} />
               <span className="hidden sm:inline">Refresh</span>

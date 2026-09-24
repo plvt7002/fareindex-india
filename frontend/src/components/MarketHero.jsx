@@ -160,7 +160,7 @@ export function MarketHero({
 
           <div className="flex items-center gap-1.5 text-xs text-slate-500 font-sans">
             <span className="w-2 h-2 rounded-full bg-teal-600" />
-            <span>Latest observation · <strong className="font-mono text-slate-900 font-semibold">{formattedDate}</strong></span>
+            <span>Market data through · <strong className="font-mono text-slate-900 font-semibold">{formattedDate}</strong></span>
           </div>
         </div>
 

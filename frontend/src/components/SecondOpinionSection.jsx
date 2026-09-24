@@ -136,15 +136,15 @@ export function SecondOpinionSection({ onExploreAnalytics }) {
     : null;
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto">
       {/* 1. PRIMARY PRODUCT STORY & SEARCH */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-800 relative overflow-hidden">
         {/* Decorative blur accents */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-72 h-72 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-20 w-72 h-72 rounded-full bg-sky-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-400/30 text-teal-300 text-xs font-semibold mb-3 tracking-wide">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-400/30 text-teal-300 text-xs font-semibold mb-2 tracking-wide">
             <Sparkles className="w-3.5 h-3.5 text-teal-400" />
             <span>FAREINDEX SECOND OPINION</span>
           </div>
@@ -153,13 +153,13 @@ export function SecondOpinionSection({ onExploreAnalytics }) {
             What does your airfare actually mean?
           </h1>
 
-          <p className="mt-2 text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
+          <p className="mt-1.5 text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
             See how Google Flights and FareIndex interpret the same fare using different reference frames.
           </p>
         </div>
 
         {/* 2. SEARCH CONTROLS */}
-        <div className="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+        <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
           {/* Origin */}
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5 flex items-center gap-1.5">
@@ -235,7 +235,7 @@ export function SecondOpinionSection({ onExploreAnalytics }) {
         </div>
 
         {/* Quick Presets */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <span className="text-slate-400 font-medium">Quick Routes:</span>
           {PRESETS.map((p) => (
             <button
@@ -286,9 +286,9 @@ export function SecondOpinionSection({ onExploreAnalytics }) {
 
       {/* 3. RESULT HERO (ONE CENTRAL LIVE FARE) */}
       {result && (
-        <div className="space-y-8">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 text-center shadow-xs relative overflow-hidden">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-3">
+        <div className="space-y-6">
+          <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 text-center shadow-xs relative overflow-hidden">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-2">
               <span className="font-bold text-slate-900">{result.origin} → {result.destination}</span>
               <span className="text-slate-300">·</span>
               <span className="font-mono text-slate-600">{formatDisplayDate(result.outbound_date)}</span>
@@ -313,7 +313,7 @@ export function SecondOpinionSection({ onExploreAnalytics }) {
 
           {/* 4. SIGNAL COMPARISON (PROMOTED CORE RESULT VISUAL CENTER) */}
           <div
-            className={`rounded-3xl p-6 sm:p-8 border shadow-sm transition-all ${
+            className={`rounded-3xl p-5 sm:p-6 border shadow-sm transition-all ${
               comparisonStatus === 'FULL_DIVERGENCE'
                 ? 'bg-amber-50/80 border-amber-300 text-amber-950'
                 : comparisonStatus === 'PARTIAL_DIVERGENCE'
