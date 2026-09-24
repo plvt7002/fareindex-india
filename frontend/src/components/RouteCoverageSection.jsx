@@ -85,22 +85,18 @@ export function RouteCoverageSection({
                   <span
                     className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full cursor-help ${
                       isGoi
-                        ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                        ? 'bg-teal-100 text-teal-900 border border-teal-200'
                         : 'bg-teal-100 text-teal-900 border border-teal-200'
                     }`}
-                    title={
-                      isGoi
-                        ? 'Current fares are verified. More observation dates are being collected to build a stronger historical trend.'
-                        : 'Active tracked route with verified observations.'
-                    }
+                    title="Active tracked route with verified observations."
                   >
-                    {isGoi ? 'Building history' : 'Tracked'}
+                    Tracked
                   </span>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 font-sans">
                   <span className="font-medium">
-                    {summary ? `${summary.observation_count} verified flights` : 'Active tracking'}
+                    {summary ? `${summary.observation_count} canonical observations · all horizons` : 'Active tracking'}
                   </span>
                   <span className="text-teal-800 font-semibold font-mono">
                     {isSelected ? 'Active View' : 'Select route →'}

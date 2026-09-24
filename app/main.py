@@ -343,3 +343,128 @@ def get_scrape_status():
     """Returns the status, timing, and outcome of the last fare collection run."""
     return scrape_status()
 
+
+@app.get(
+    "/api/second-opinion",
+    summary="Second Opinion Market Comparison",
+    description="Compares a live Google Flights fare with the observed FareIndex domestic fare distribution.",
+)
+def get_second_opinion(
+    origin: str = Query(..., min_length=3, max_length=3, pattern=r"^[A-Za-z]{3}$", description="3-letter IATA departure airport code, e.g. HYD"),
+    destination: str = Query(..., min_length=3, max_length=3, pattern=r"^[A-Za-z]{3}$", description="3-letter IATA arrival airport code, e.g. DEL"),
+    outbound_date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="Outbound flight date in YYYY-MM-DD format, e.g. 2026-09-29"),
+):
+    """
+    Retrieves live Google Flights pricing via SerpApi, filters for verified domestic itineraries,
+    compares against calibrated FareIndex empirical domestic baselines, and generates a deterministic Second Opinion.
+    """
+    from datetime import datetime as dt
+    from .serpapi import SerpApiClient, SerpApiException, parse_google_flights_response, SerpApiCache
+    from .intelligence import build_second_opinion, get_route_baseline
+
+    # 1. Validate date format
+    date_clean = outbound_date.strip()
+    try:
+        dt.strptime(date_clean, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid outbound_date '{date_clean}'. Must be a valid calendar date in YYYY-MM-DD format."
+        )
+
+    origin_clean = origin.strip().upper()
+    dest_clean = destination.strip().upper()
+    route = f"{origin_clean}-{dest_clean}"
+
+    # 2. Check local cache before making external API call
+    cache = SerpApiCache()
+    raw_data = cache.get(origin=origin_clean, destination=dest_clean, outbound_date=date_clean)
+
+    if raw_data is None:
+        client = SerpApiClient()
+        try:
+            raw_data = client.search_flights(
+                departure_id=origin_clean,
+                arrival_id=dest_clean,
+                outbound_date=date_clean,
+                flight_type=2,
+                currency="INR",
+                hl="en",
+                gl="in",
+            )
+            cache.set(origin=origin_clean, destination=dest_clean, outbound_date=date_clean, data=raw_data)
+        except SerpApiException as exc:
+            status_code = exc.status_code if (exc.status_code and 400 <= exc.status_code <= 599) else 502
+            raise HTTPException(status_code=status_code, detail=str(exc)) from None
+
+    # 3. Parse Google Flights data
+    parsed = parse_google_flights_response(raw_data)
+
+    # 4. Filter for verified comparable domestic itineraries
+    all_flights = parsed.get("all_flights", [])
+    domestic_flights = [
+        f for f in all_flights
+        if f.get("is_domestic") and f.get("price") is not None and float(f["price"]) > 0
+    ]
+
+    live_price = None
+    if domestic_flights:
+        live_price = min(float(f["price"]) for f in domestic_flights)
+    elif parsed.get("lowest_price") is not None and not all_flights:
+        # Fallback when only top-level price_insights is present
+        live_price = float(parsed["lowest_price"])
+    elif all_flights and not domestic_flights:
+        # Itineraries exist, but all were flagged as international transit / non-domestic
+        raise HTTPException(
+            status_code=422,
+            detail=f"No comparable domestic itinerary found for route {route} on {date_clean}. "
+                   "All returned itineraries contain international transit segments or non-domestic carriers."
+        )
+
+    # 5. Retrieve empirical FareIndex baseline
+    try:
+        fareindex_baseline = get_route_baseline(route)
+    except Exception:
+        fareindex_baseline = {"p25": None, "median": None, "p75": None, "count": 0}
+
+    # 6. Generate Second Opinion payload
+    opinion = build_second_opinion(
+        live_price=live_price,
+        route=route,
+        fareindex_baseline=fareindex_baseline,
+        serpapi_data=parsed,
+    )
+
+    obs_count = fareindex_baseline.get("count", 0) if isinstance(fareindex_baseline, dict) else 0
+
+    return {
+        "route": route,
+        "origin": origin_clean,
+        "destination": dest_clean,
+        "outbound_date": date_clean,
+        "live_price": opinion["live_price"],
+        "fareindex": {
+            "p25": opinion["fareindex"]["p25"],
+            "median": opinion["fareindex"]["median"],
+            "p75": opinion["fareindex"]["p75"],
+            "tier": opinion["fareindex"]["tier"],
+            "observation_count": obs_count,
+        },
+        "google": {
+            "lowest_price": parsed.get("lowest_price"),
+            "price_level": parsed.get("price_level"),
+            "typical_price_range": parsed.get("typical_price_range"),
+            "range_tier": opinion["google"]["range_tier"],
+            "price_history": parsed.get("price_history"),
+            "flight_result_count": parsed.get("total_flight_results", 0),
+            "airlines": parsed.get("airlines", []),
+        },
+        "comparison": opinion["comparison"],
+        "explanation": opinion["explanation"],
+        "methodology": opinion["methodology"],
+        "provenance": {
+            "live_source": "SerpApi / Google Flights",
+            "historical_source": "FareIndex India",
+        },
+    }
+

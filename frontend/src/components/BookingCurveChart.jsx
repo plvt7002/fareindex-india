@@ -48,7 +48,7 @@ function CustomBookingTooltip({ active, payload, viewMetric }) {
         </div>
         <div className="flex justify-between items-center gap-4 pt-1 border-t border-slate-100 text-[11px]">
           <span className="text-slate-500 font-sans">Observed sample:</span>
-          <span className="font-semibold text-slate-700">{d.observation_count} flights</span>
+          <span className="font-semibold text-slate-700">{d.observation_count} flights (n = {d.observation_count})</span>
         </div>
       </div>
     </div>
@@ -157,6 +157,8 @@ export function BookingCurveChart({ bookingData, route, selectedBucket = '7D', o
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
         {HORIZONS.map((h) => {
           const isSelected = currentSelectedBucket === h.id;
+          const entry = series.find((s) => s.bucket === h.id);
+          const obsCount = entry?.observation_count;
           return (
             <div
               key={h.id}
@@ -165,7 +167,12 @@ export function BookingCurveChart({ bookingData, route, selectedBucket = '7D', o
                   : 'bg-slate-50/60 border-slate-200/70 text-slate-600'
                 }`}
             >
-              <div className="font-mono font-bold text-xs text-slate-900">{h.label}</div>
+              <div className="font-mono font-bold text-xs text-slate-900 flex items-center justify-between">
+                <span>{h.label}</span>
+                {obsCount !== undefined && (
+                  <span className="text-[10px] text-slate-500 font-normal font-mono">n = {obsCount}</span>
+                )}
+              </div>
               <div className="text-[11px] text-slate-500 leading-tight mt-0.5">{h.desc}</div>
             </div>
           );

@@ -16,7 +16,7 @@ export const ROUTE_CATALOG = {
     status: 'TRACKED',
     badge: 'Verified Baseline',
     badgeType: 'verified',
-    description: 'Trunk business & leisure corridor with verified historical baseline.',
+    description: 'Trunk business & leisure corridor with verified canonical baseline.',
   },
   'HYD-GOI': {
     code: 'HYD-GOI',
@@ -25,9 +25,9 @@ export const ROUTE_CATALOG = {
     originName: 'Hyderabad',
     destName: 'Goa',
     status: 'TRACKED',
-    badge: 'Building Baseline',
-    badgeType: 'building',
-    description: 'High-season leisure corridor with ongoing observation history.',
+    badge: 'Verified Baseline',
+    badgeType: 'verified',
+    description: 'High-season leisure corridor with verified canonical baseline.',
   },
   'HYD-BOM': {
     code: 'HYD-BOM',

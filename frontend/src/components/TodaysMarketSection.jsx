@@ -5,11 +5,8 @@ import { api } from '../api/client';
 
 const PAGE_SIZE = 20;
 
-export function TodaysMarketSection({ latestFaresData, selectedRoute, typicalFare = 8448, selectedBucket = '7D' }) {
-  const [fareType, setFareType] = useState('ONE_WAY'); // 'ONE_WAY' | 'ROUND_TRIP_LEGACY'
+export function TodaysMarketSection({ latestFaresData, selectedRoute, typicalFare, selectedBucket = '7D' }) {
   const [viewMode, setViewMode] = useState('REPRESENTATIVE'); // 'REPRESENTATIVE' | 'ALL'
-  const [roundTripFaresData, setRoundTripFaresData] = useState(null);
-  const [isLoadingRoundTrip, setIsLoadingRoundTrip] = useState(false);
 
   const [airlineFilter, setAirlineFilter] = useState('ALL');
   const [windowFilter, setWindowFilter] = useState('ALL');
@@ -18,32 +15,7 @@ export function TodaysMarketSection({ latestFaresData, selectedRoute, typicalFar
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRowId, setExpandedRowId] = useState(null);
 
-  // Fetch round trip data when user switches to ROUND TRIP tab or route changes
-  useEffect(() => {
-    if (fareType === 'ROUND_TRIP_LEGACY') {
-      let isMounted = true;
-      setIsLoadingRoundTrip(true);
-      api.getLatestPrices(selectedRoute || 'HYD-DEL', 'ROUND_TRIP_LEGACY')
-        .then((data) => {
-          if (isMounted) {
-            setRoundTripFaresData(data);
-            setIsLoadingRoundTrip(false);
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to load round-trip fares:', err);
-          if (isMounted) {
-            setRoundTripFaresData(null);
-            setIsLoadingRoundTrip(false);
-          }
-        });
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [fareType, selectedRoute]);
-
-  // Reset page and filters when tab or route changes
+  // Reset page and filters when route changes
   useEffect(() => {
     setCurrentPage(1);
     setAirlineFilter('ALL');
@@ -52,14 +24,11 @@ export function TodaysMarketSection({ latestFaresData, selectedRoute, typicalFar
     setExpandedRowId(null);
     setViewMode('REPRESENTATIVE');
     setSortBy('CLOSEST_TYPICAL');
-  }, [fareType, selectedRoute]);
+  }, [selectedRoute]);
 
-  // Active dataset depending on selected tab
-  const isOneWay = fareType === 'ONE_WAY';
-  const activeData = isOneWay ? latestFaresData : roundTripFaresData;
-  const rawRows = activeData?.fares || [];
-  const timestamp = activeData?.latest_search_timestamp;
-  const formattedCollectionDate = formatDisplayDate(timestamp, '8 Sep 2026');
+  const rawRows = latestFaresData?.fares || [];
+  const timestamp = latestFaresData?.latest_search_timestamp;
+  const formattedCollectionDate = formatDisplayDate(timestamp, 'Latest verified observation');
   const formattedCollectionTime = formatDisplayDate(timestamp, 'Latest Collection');
 
   // Explicit mapping of each individual row to enforce price_inr binding
@@ -184,34 +153,26 @@ export function TodaysMarketSection({ latestFaresData, selectedRoute, typicalFar
           <div className="flex items-center gap-2.5 flex-wrap">
             <h2 className="text-xl font-bold text-slate-950 m-0 tracking-tight font-sans">
               {viewMode === 'REPRESENTATIVE'
-                ? isOneWay
-                  ? 'Representative Fares'
-                  : 'Representative round-trip fares'
-                : isOneWay
-                  ? 'All Current Observations'
-                  : 'All Round-Trip Observations'}
+                ? 'Representative Domestic Fares'
+                : 'All Verified Domestic Observations'}
             </h2>
             <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 font-semibold">
               {viewMode === 'REPRESENTATIVE' && sortBy === 'CLOSEST_TYPICAL'
-                ? `${displayedFares.length} representative fares · ${filteredFares.length} current observations`
-                : `${filteredFares.length} current observations · ${uniqueAirlines.length} airlines`}
+                ? `${displayedFares.length} representative fares (from ${filteredFares.length} observed)`
+                : `${filteredFares.length} verified observations · ${uniqueAirlines.length} airlines`}
             </span>
           </div>
           <p className="text-xs text-slate-500 m-0 mt-1 font-sans">
             {viewMode === 'REPRESENTATIVE'
-              ? isOneWay
-                ? 'Current fares that best represent the observed market range.'
-                : 'Current round-trip observations shown separately from the one-way FareIndex.'
-              : isOneWay
-                ? `Complete set of verified one-way observations for ${routeDisplayName}.`
-                : 'Complete set of verified round-trip observations.'}
+              ? 'Current domestic fares that best represent the observed market range.'
+              : `Complete set of verified domestic one-way observations for ${routeDisplayName}.`}
           </p>
           <div className="text-[11px] font-mono text-slate-400 mt-0.5">
-            Latest market observations · Collected {formattedCollectionDate}
+            Observation date: 9 Sep 2026 · Collected {formattedCollectionDate}
           </div>
         </div>
 
-        {/* View Mode & Fare Type Toggles */}
+        {/* View Mode Switcher & Dataset Badge */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Mode Selector: Representative vs All */}
           <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
@@ -245,28 +206,9 @@ export function TodaysMarketSection({ latestFaresData, selectedRoute, typicalFar
             </button>
           </div>
 
-          {/* ONE-WAY / ROUND TRIP Toggle */}
-          <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => setFareType('ONE_WAY')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${isOneWay
-                  ? 'bg-teal-700 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              ONE-WAY
-            </button>
-            <button
-              type="button"
-              onClick={() => setFareType('ROUND_TRIP_LEGACY')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${!isOneWay
-                  ? 'bg-teal-700 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              ROUND TRIP
-            </button>
+          {/* Domestic One-Way Indicator Badge */}
+          <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-mono font-semibold">
+            <span>Domestic · One-Way</span>
           </div>
         </div>
       </div>
@@ -406,13 +348,7 @@ export function TodaysMarketSection({ latestFaresData, selectedRoute, typicalFar
         </div>
       </div>
 
-      {/* Flight Results Table */}
-      {isLoadingRoundTrip ? (
-        <div className="p-12 text-center text-slate-500 text-xs flex flex-col items-center justify-center gap-2 bg-slate-50 rounded-xl border border-slate-200">
-          <Loader2 className="w-5 h-5 animate-spin text-teal-700" />
-          <span>Loading latest round-trip observations...</span>
-        </div>
-      ) : displayedFares.length === 0 ? (
+      {displayedFares.length === 0 ? (
         <div className="p-8 text-center text-slate-500 text-xs bg-slate-50 rounded-xl border border-slate-200">
           No observed flights match the selected filter criteria.
         </div>
@@ -590,16 +526,14 @@ export function TodaysMarketSection({ latestFaresData, selectedRoute, typicalFar
         <div className="flex items-center gap-1.5 text-[11px]">
           <ShieldCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <span>
-            {isOneWay
-              ? 'Observed fares represent actual domestic search results collected during scheduled observation runs. Not an airline booking engine.'
-              : 'Latest round-trip observations shown separately from the one-way FareIndex.'}
+            Verified domestic one-way observations collected during scheduled runs. Not an airline booking engine.
           </span>
         </div>
         <div className="text-[11px] font-mono shrink-0">
           {viewMode === 'REPRESENTATIVE' ? (
-            <span>Showing fares closest to the typical market level · {totalCount} observations available</span>
+            <span>Showing fares closest to the typical market level · {totalCount} observations from 9 Sep 2026</span>
           ) : (
-            <span>{totalCount} {isOneWay ? 'verified' : 'round-trip'} observations available</span>
+            <span>{totalCount} observations from 9 Sep 2026</span>
           )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from './components/Header';
+import { SecondOpinionSection } from './components/SecondOpinionSection';
 import { MarketHero } from './components/MarketHero';
 import { FareMovementChart } from './components/FareMovementChart';
 import { FareDistributionChart } from './components/FareDistributionChart';
@@ -9,7 +10,7 @@ import { MethodologyModal } from './components/MethodologyModal';
 import { api } from './api/client';
 import { AlertTriangle } from 'lucide-react';
 
-const SECTIONS = ['overview', 'movement', 'distribution', 'booking', 'observed-fares'];
+const SECTIONS = ['second-opinion', 'overview', 'movement', 'distribution', 'booking', 'observed-fares'];
 
 export default function App() {
   const [routes, setRoutes] = useState([]);
@@ -26,7 +27,8 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [globalError, setGlobalError] = useState(null);
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('overview');
+  const [activeView, setActiveView] = useState('second-opinion'); // 'second-opinion' | 'analytics'
+  const [activeSection, setActiveSection] = useState('second-opinion');
 
   // Load all primary data from backend API when selectedRoute changes or refreshed
   const loadDashboardData = useCallback(async (showRefreshing = false) => {
@@ -80,7 +82,7 @@ export default function App() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [selectedRoute]);
+  }, [selectedRoute, selectedBucket]);
 
   // Initial load and on route change
   useEffect(() => {
@@ -96,18 +98,22 @@ export default function App() {
     }
   }, [selectedRoute, selectedBucket]);
 
-  // Scroll spy to update active section in header
+  // Scroll spy to update active section when in analytics view
   useEffect(() => {
+    if (activeView !== 'analytics') return;
+
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const offset = 180;
 
       for (let i = SECTIONS.length - 1; i >= 0; i--) {
-        const el = document.getElementById(SECTIONS[i]);
+        const sId = SECTIONS[i];
+        if (sId === 'second-opinion') continue;
+        const el = document.getElementById(sId);
         if (el) {
           const top = el.offsetTop - offset;
           if (scrollY >= top) {
-            setActiveSection(SECTIONS[i]);
+            setActiveSection(sId);
             break;
           }
         }
@@ -116,15 +122,27 @@ export default function App() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [activeView]);
 
-  // Handle section navigation
+  // Handle section navigation between Second Opinion and Analytics Dashboard
   const handleNavigate = useCallback((sectionId) => {
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (sectionId === 'second-opinion') {
+      setActiveView('second-opinion');
+      setActiveSection('second-opinion');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.history.replaceState(null, '', '#second-opinion');
+    } else {
+      setActiveView('analytics');
       setActiveSection(sectionId);
       window.history.replaceState(null, '', `#${sectionId}`);
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 50);
     }
   }, []);
 
@@ -160,8 +178,8 @@ export default function App() {
         onNavigate={handleNavigate}
       />
 
-      {/* Main Content Area: Focused Customer Hierarchy */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-14">
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
         {/* Global Error Banner */}
         {globalError && (
           <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-center justify-between shadow-2xs">
@@ -178,56 +196,96 @@ export default function App() {
           </div>
         )}
 
-        {/* 1–4. HERO: ROUTE + AVERAGE OBSERVED FARE + MOVEMENT + TYPICAL FARE + FARE POSITION */}
-        <MarketHero
-          routes={routes}
-          selectedRoute={selectedRoute}
-          onSelectRoute={(r) => setSelectedRoute(r)}
-          routeSummaries={routeSummaries}
-          nationalData={nationalData}
-          nearTermTrendData={nearTermTrendData}
-          movementData={movementData}
-          onOpenMethodology={() => setIsMethodologyOpen(true)}
-        />
+        {/* View Mode Switcher Pill */}
+        <div className="flex items-center justify-center pb-2">
+          <div className="inline-flex p-1.5 rounded-2xl bg-slate-200/90 border border-slate-300/80 text-xs font-semibold shadow-2xs">
+            <button
+              onClick={() => handleNavigate('second-opinion')}
+              className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+                activeView === 'second-opinion'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100/60'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-teal-400" />
+              <span>Second Opinion (Live Comparator)</span>
+            </button>
+            <button
+              onClick={() => handleNavigate('overview')}
+              className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+                activeView === 'analytics'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100/60'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-slate-400" />
+              <span>Market Analytics Dashboard</span>
+            </button>
+          </div>
+        </div>
 
-        {/* 5. HISTORICAL FARE MOVEMENT (MAIN GRAPH) */}
-        <section id="movement">
-          <FareMovementChart
-            movementData={movementData}
-            selectedRoute={selectedRoute}
-            isNational={selectedRoute === null}
-          />
-        </section>
+        {/* VIEW 1: SECOND OPINION PRODUCT EXPERIENCE */}
+        {activeView === 'second-opinion' ? (
+          <div className="animate-in fade-in duration-200">
+            <SecondOpinionSection onExploreAnalytics={(sec) => handleNavigate(sec)} />
+          </div>
+        ) : (
+          /* VIEW 2: ANALYTICAL FAREINDEX DASHBOARD */
+          <div className="space-y-14 animate-in fade-in duration-200">
+            {/* 1–4. HERO: ROUTE + AVERAGE OBSERVED FARE + MOVEMENT + TYPICAL FARE + FARE POSITION */}
+            <div id="overview" className="scroll-mt-24">
+              <MarketHero
+                routes={routes}
+                selectedRoute={selectedRoute}
+                onSelectRoute={(r) => setSelectedRoute(r)}
+                routeSummaries={routeSummaries}
+                nationalData={nationalData}
+                nearTermTrendData={nearTermTrendData}
+                movementData={movementData}
+                onOpenMethodology={() => setIsMethodologyOpen(true)}
+              />
+            </div>
 
-        {/* 6. FARE DISTRIBUTION (WHERE OBSERVED FARES CLUSTER) */}
-        <section id="distribution">
-          {!selectedRoute ? null : (
-            <FareDistributionChart
-              distributionData={distributionTrendData?.distribution}
-              route={selectedRoute}
-              leadTimeLabel={distributionTrendData?.lead_time_label || 'Near-term · 1–10 days ahead'}
-              leadTimeBucket={selectedBucket}
+            {/* 5. HISTORICAL FARE MOVEMENT (MAIN GRAPH) */}
+            <section id="movement">
+              <FareMovementChart
+                movementData={movementData}
+                selectedRoute={selectedRoute}
+                isNational={selectedRoute === null}
+              />
+            </section>
+
+            {/* 6. FARE DISTRIBUTION (WHERE OBSERVED FARES CLUSTER) */}
+            <section id="distribution">
+              {!selectedRoute ? null : (
+                <FareDistributionChart
+                  distributionData={distributionTrendData?.distribution}
+                  route={selectedRoute}
+                  leadTimeLabel={distributionTrendData?.lead_time_label || 'Near-term · 1–10 days ahead'}
+                  leadTimeBucket={selectedBucket}
+                />
+              )}
+            </section>
+
+            {/* 7. BOOKING BEHAVIOUR (7D, 14D, 21D, 30D, 60D LEAD TIME CURVE) */}
+            <section id="booking">
+              <BookingCurveChart
+                bookingData={bookingCurveData}
+                route={selectedRoute}
+                selectedBucket={selectedBucket}
+                onSelectBucket={(b) => setSelectedBucket(b)}
+              />
+            </section>
+
+            {/* 8. OBSERVED FARES (REPRESENTATIVE CURRENT FLIGHT OPTIONS) */}
+            <TodaysMarketSection
+              latestFaresData={latestFaresData}
+              selectedRoute={selectedRoute}
+              typicalFare={currentRouteSummary?.near_term_median || nearTermTrendData?.current_typical_fare || 9268}
+              selectedBucket={selectedBucket}
             />
-          )}
-        </section>
-
-        {/* 7. BOOKING BEHAVIOUR (7D, 14D, 21D, 30D, 60D LEAD TIME CURVE) */}
-        <section id="booking">
-          <BookingCurveChart
-            bookingData={bookingCurveData}
-            route={selectedRoute}
-            selectedBucket={selectedBucket}
-            onSelectBucket={(b) => setSelectedBucket(b)}
-          />
-        </section>
-
-        {/* 8. OBSERVED FARES (REPRESENTATIVE CURRENT FLIGHT OPTIONS) */}
-        <TodaysMarketSection
-          latestFaresData={latestFaresData}
-          selectedRoute={selectedRoute}
-          typicalFare={currentRouteSummary?.near_term_median || nearTermTrendData?.current_typical_fare || 9268}
-          selectedBucket={selectedBucket}
-        />
+          </div>
+        )}
       </main>
 
       {/* 5-Step Methodology Modal (How is this calculated?) */}

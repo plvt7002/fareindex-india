@@ -3,6 +3,7 @@ import { Plane, RefreshCw, BookOpen } from 'lucide-react';
 import { formatDisplayDate } from '../utils/formatters';
 
 const NAV_ITEMS = [
+  { id: 'second-opinion', label: '⚡ Second Opinion', isSpecial: true },
   { id: 'overview', label: 'Overview' },
   { id: 'movement', label: 'Fare Movement' },
   { id: 'distribution', label: 'Distribution' },

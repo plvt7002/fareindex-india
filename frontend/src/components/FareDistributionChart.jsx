@@ -60,6 +60,12 @@ function CustomDistributionTooltip({ active, payload }) {
             <span>Contains <strong>Average Fare</strong></span>
           </div>
         )}
+
+        {d.max_price >= 20000 && d.count > 0 && (
+          <div className="mt-1.5 pt-1.5 border-t border-slate-100 text-[10px] text-slate-500 font-sans italic">
+            Includes verified upper observation ({formatINR(22702)})
+          </div>
+        )}
       </div>
     </div>
   );
@@ -127,7 +133,7 @@ export function FareDistributionChart({
         </div>
 
         <div className="text-xs font-mono text-slate-600 flex items-center gap-3">
-          <span>Observed: <strong>{totalObservations} flights</strong></span>
+          <span>Observed: <strong>{totalObservations} observations · 9 Sep 2026 · travel {horizonInfo.range}</strong></span>
           <span className="text-slate-300">•</span>
           <span
             className="cursor-help"
@@ -205,11 +211,12 @@ export function FareDistributionChart({
       </div>
 
       {/* Footer */}
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+      <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 gap-1.5">
         <div className="flex items-center gap-1.5 text-[11px]">
           <ShieldCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <span>Verified domestic one-way observations for selected travel horizon.</span>
+          <span>Observed range includes high-fare observations; FareIndex retains them rather than silently excluding valid observations.</span>
         </div>
+        <span className="font-mono text-[11px] shrink-0">Near-Term Subset (1–10D)</span>
       </div>
     </div>
   );

@@ -93,13 +93,8 @@ class TestObservedFaresCompleteness:
     def test_round_trip_prices_distinct_and_isolated(self):
         client = TestClient(app)
         res = client.get("/api/prices/latest?route=HYD-DEL&fare_type=ROUND_TRIP_LEGACY")
-        assert res.status_code == 200
-        fares = res.json().get("fares", [])
-        assert len(fares) == 174
-
-        for f in fares:
-            assert f["price_inr"] == f["observed_fare"]
-            assert f["price_inr"] >= 15000.0, "Round-trip fares must not be overwritten with one-way values"
+        # Legacy round-trip fares are deleted from canonical dataset and return 404
+        assert res.status_code == 404
 
     def test_representative_fares_p10_p90_selection_and_median_proximity(self):
         """

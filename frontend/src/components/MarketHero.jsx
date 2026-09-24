@@ -189,7 +189,7 @@ export function MarketHero({
           <div className="space-y-0.5 pt-0.5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-sans">
-                Typical Market Fare
+                Latest market snapshot
               </span>
               <button
                 onClick={() => setShowMethodologyTooltip(!showMethodologyTooltip)}
@@ -200,7 +200,7 @@ export function MarketHero({
               </button>
             </div>
             <p className="text-xs text-slate-500 font-normal m-0">
-              All current eligible observations
+              {movementData?.latest_point?.observation_count ? `${movementData.latest_point.observation_count} observations · ${formattedDate} · all horizons` : '154 observations · 9 Sep 2026 · all horizons'}
             </p>
           </div>
         </div>

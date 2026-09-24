@@ -217,8 +217,7 @@ def rebuild_route_indices() -> dict[str, Any]:
     1) Extract public snapshot observations (strictly ONE_WAY & domestic VALID, latest Playwright run per day, excluding Demo).
     2) Compute daily median fare and daily mean fare for each route on each observation calendar day.
     3) Baseline for a route:
-       - For HYD-DEL: Median of usable historical daily market medians (unweighted by flight count: Aug 28, Aug 29, Aug 30, Aug 31, Sep 7).
-       - For other routes: Median of available daily market medians (requires >= 2 distinct observation dates).
+       - Median of available daily market medians across verified observation dates (Base = 100).
     4) Index(t) = daily_median / baseline * 100 (Base = 100).
     """
     conn = connect()
@@ -245,74 +244,14 @@ def rebuild_route_indices() -> dict[str, Any]:
 
         for r_name, group in daily.groupby("route"):
             r_clean = str(r_name).upper()
-            if r_clean == "HYD-DEL":
-                # Historical empirical baseline
-                matched_stats = calculate_empirical_matched_pairs_ratio(route="HYD-DEL", observation_date="2026-09-08", conn=conn)
-                global_fallback = matched_stats.get("global_fallback_factor") or 1.8960
-                airline_factors_map = {}
-                for air_k, air_v in (matched_stats.get("airline_factors") or {}).items():
-                    if air_v.get("is_eligible"):
-                        airline_factors_map[air_k] = air_v.get("effective_factor", global_fallback)
-
-                df_hist_records = query_df("""
-                    SELECT id, route, airline, price_inr, travel_date,
-                           SUBSTR(search_timestamp, 1, 10) as observation_date
-                    FROM raw_prices
-                    WHERE route = 'HYD-DEL'
-                      AND source != 'DEMO - NOT LIVE'
-                      AND (fare_type = 'ROUND_TRIP_LEGACY' OR fare_type = 'UNKNOWN')
-                      AND SUBSTR(search_timestamp, 1, 10) < '2026-09-08'
-                    ORDER BY observation_date
-                """, conn=conn)
-
-                hist_daily_medians = []
-                hist_records_list = []
-                if not df_hist_records.empty:
-                    df_hist_records["norm_fare"] = df_hist_records.apply(
-                        lambda r: r["price_inr"] / airline_factors_map.get(r["airline"], global_fallback),
-                        axis=1
-                    )
-                    hist_grouped = df_hist_records.groupby("observation_date").agg(
-                        norm_mean=("norm_fare", "mean"),
-                        norm_median=("norm_fare", "median")
-                    ).reset_index()
-
-                    for h_row in hist_grouped.itertuples(index=False):
-                        h_med = round(float(h_row.norm_median), 2)
-                        h_avg = round(float(h_row.norm_mean), 2)
-                        hist_daily_medians.append(h_med)
-                        hist_records_list.append((str(h_row.observation_date), h_avg, h_med))
-
-                # Baseline is median of historical daily medians (each date contributes 1 value)
-                baseline_fare = round(float(np.median(hist_daily_medians)), 2) if hist_daily_medians else round(float(group["median_fare"].median()), 2)
-
-                # Add historical index values
-                for h_date, h_avg, h_med in hist_records_list:
-                    h_idx = round((h_med / baseline_fare) * 100, 2)
-                    all_rows_to_insert.append((r_clean, h_date, h_avg, h_med, baseline_fare, h_idx, now_iso))
-
-                # Add verified current index values
-                for v_row in group.itertuples(index=False):
-                    v_date = str(v_row.observation_date)
-                    v_avg = round(float(v_row.avg_fare), 2)
-                    v_med = round(float(v_row.median_fare), 2)
-                    v_idx = round((v_med / baseline_fare) * 100, 2)
-                    all_rows_to_insert.append((r_clean, v_date, v_avg, v_med, baseline_fare, v_idx, now_iso))
-
-                routes_indexed.add(r_clean)
-
-            else:
-                # Other routes require >= 2 distinct observation dates
-                unique_dates = group["observation_date"].nunique()
-                if unique_dates >= 2:
-                    baseline_fare = round(float(group["median_fare"].median()), 2)
-                    for row in group.itertuples(index=False):
-                        v_date = str(row.observation_date)
-                        v_avg = round(float(row.avg_fare), 2)
-                        v_med = round(float(row.median_fare), 2)
-                        v_idx = round((v_med / baseline_fare) * 100, 2)
-                        all_rows_to_insert.append((r_clean, v_date, v_avg, v_med, baseline_fare, v_idx, now_iso))
-                    routes_indexed.add(r_clean)
+            baseline_fare = round(float(group["median_fare"].median()), 2)
+            for row in group.itertuples(index=False):
+                v_date = str(row.observation_date)
+                v_avg = round(float(row.avg_fare), 2)
+                v_med = round(float(row.median_fare), 2)
+                v_idx = round((v_med / baseline_fare) * 100, 2) if baseline_fare > 0 else 100.0
+                all_rows_to_insert.append((r_clean, v_date, v_avg, v_med, baseline_fare, v_idx, now_iso))
+            routes_indexed.add(r_clean)
 
         conn.executemany("""
             INSERT INTO index_values
@@ -1231,10 +1170,9 @@ def calculate_empirical_matched_pairs_ratio(
 
 def get_route_movement_series(target_route: str = "HYD-DEL") -> dict[str, Any]:
     """
-    Constructs a transparent calendar market movement series bridging genuine historical reference
-    observations onto the verified current one-way scale for HYD-DEL using empirical normalization factors.
+    Constructs a verified calendar market movement series directly from canonical domestic
+    one-way observations.
     Uses daily MEDIAN as the primary market metric.
-    For routes with single observation date (HYD-GOI), returns building status.
     Preserves date gaps without synthetic dates or interpolation.
     """
     route_upper = target_route.upper()
@@ -1242,215 +1180,46 @@ def get_route_movement_series(target_route: str = "HYD-DEL") -> dict[str, Any]:
     try:
         df_snap = get_public_snapshot_dataframe(conn, target_route=route_upper)
         
-        if df_snap.empty or route_upper != "HYD-DEL":
-            series = []
-            if not df_snap.empty:
-                dates = sorted(df_snap["observation_date"].unique().tolist())
-                for d in dates:
-                    sub = df_snap[df_snap["observation_date"] == d]
-                    current_med = round(float(sub["price_inr"].median()), 2)
-                    current_mean = round(float(sub["price_inr"].mean()), 2)
-                    sub_7d = sub[sub["lead_time_bucket"] == "7D"]
-                    current_7d_med = round(float(sub_7d["price_inr"].median()), 2) if not sub_7d.empty else current_med
-                    current_7d_mean = round(float(sub_7d["price_inr"].mean()), 2) if not sub_7d.empty else current_mean
-                    series.append({
-                        "observation_date": str(d),
-                        "fare": current_med,
-                        "typical_fare": current_7d_med,
-                        "daily_median_fare": current_med,
-                        "daily_mean_fare": current_mean,
-                        "near_term_median": current_7d_med,
-                        "near_term_mean": current_7d_mean,
-                        "raw_fare": current_med,
-                        "raw_legacy_fare": None,
-                        "source_class": "verified_current",
-                        "observation_count": len(sub),
-                        "change_inr": None,
-                        "change_pct": None,
-                        "dod_change": None,
-                        "dod_change_pct": None,
-                    })
-
-                for i in range(1, len(series)):
-                    prev_f = series[i-1]["fare"]
-                    curr_f = series[i]["fare"]
-                    chg = round(curr_f - prev_f, 2)
-                    pct = round(((curr_f - prev_f) / prev_f) * 100, 2) if prev_f > 0 else 0.0
-                    series[i]["change_inr"] = chg
-                    series[i]["change_pct"] = pct
-                    series[i]["dod_change"] = chg
-                    series[i]["dod_change_pct"] = pct
-
-            latest_chg = series[-1]["change_inr"] if series else None
-            latest_pct = series[-1]["change_pct"] if series else None
-            if latest_pct is not None:
-                if latest_pct > 1.5:
-                    trend_dir = "RISING"
-                elif latest_pct < -1.5:
-                    trend_dir = "FALLING"
-                else:
-                    trend_dir = "STABLE"
-            else:
-                trend_dir = "AWAITING_HISTORY"
-
-            is_verified_to_verified = len(series) >= 2
-            movement_label = "Verified day-over-day movement" if is_verified_to_verified else "Calendar movement is building"
-            movement_type = "VERIFIED_DAY_OVER_DAY" if is_verified_to_verified else "BUILDING_BASELINE"
-
-            latest_point = {
-                "observation_date": series[-1]["observation_date"],
-                "fare": series[-1]["fare"],
-                "daily_median_fare": series[-1]["daily_median_fare"],
-                "daily_mean_fare": series[-1]["daily_mean_fare"],
-                "near_term_median": series[-1]["near_term_median"],
-                "near_term_mean": series[-1]["near_term_mean"],
-                "source_class": series[-1]["source_class"],
-                "observation_count": series[-1]["observation_count"],
-                "change_inr": latest_chg,
-                "change_pct": latest_pct,
-                "direction": trend_dir,
-                "movement_type": movement_type,
-                "movement_label": movement_label,
-            } if series else None
-
-            return {
-                "route": route_upper,
-                "metric": "market_reference_fare",
-                "primary_market_metric": "median",
-                "primary_market_fare": latest_point["fare"] if latest_point else None,
-                "primary_market_population": "all-horizon canonical snapshot",
-                "daily_median_fare": latest_point["daily_median_fare"] if latest_point else None,
-                "daily_mean_fare": latest_point["daily_mean_fare"] if latest_point else None,
-                "near_term_median": series[-1]["near_term_median"] if series else None,
-                "near_term_mean": series[-1]["near_term_mean"] if series else None,
-                "status": "VERIFIED_DAY_OVER_DAY" if is_verified_to_verified else "BUILDING_BASELINE",
-                "display_status": "VERIFIED DAY-OVER-DAY" if is_verified_to_verified else "BUILDING_BASELINE",
-                "trend_readiness": "READY" if len(series) >= 7 else ("VERIFIED_DAY_OVER_DAY" if is_verified_to_verified else "BUILDING_BASELINE"),
-                "status_label": movement_label,
-                "movement_label": movement_label,
-                "status_message": "Verified day-over-day market movement." if is_verified_to_verified else "Calendar movement is building — insufficient historical observations.",
-                "bridge_factor": None,
-                "bridge_factor_median": None,
-                "robustness_median_factor": None,
-                "bridge_method": None,
-                "bridge_methodology": None,
-                "empirical_matched_ratio": None,
-                "matched_pairs_count": 0,
-                "current_typical_fare": series[-1]["typical_fare"] if series else None,
-                "current_average_fare": series[-1]["daily_mean_fare"] if series else None,
-                "latest_change_inr": latest_chg,
-                "latest_change_pct": latest_pct,
-                "trend_direction": trend_dir,
-                "consecutive_verified_dates": len(series),
-                "latest_point": latest_point,
-                "series": series,
-            }
-
-        # 1. Compute empirical matched pairs & airline-specific factors
-        matched_stats = calculate_empirical_matched_pairs_ratio(route="HYD-DEL", observation_date="2026-09-08", conn=conn)
-        global_fallback = matched_stats.get("global_fallback_factor") or 1.8960
-        airline_factors_map = {}
-        for air_k, air_v in (matched_stats.get("airline_factors") or {}).items():
-            if air_v.get("is_eligible"):
-                airline_factors_map[air_k] = air_v.get("effective_factor", global_fallback)
-
-        # 2. Historical flight records normalization (Aug 28, Aug 29, Aug 30, Aug 31, Sep 7)
-        df_hist_records = query_df("""
-            SELECT 
-                id, route, airline, price_inr, travel_date,
-                SUBSTR(search_timestamp, 1, 10) as observation_date
-            FROM raw_prices
-            WHERE route = 'HYD-DEL'
-              AND source != 'DEMO - NOT LIVE'
-              AND (fare_type = 'ROUND_TRIP_LEGACY' OR fare_type = 'UNKNOWN')
-              AND SUBSTR(search_timestamp, 1, 10) < '2026-09-08'
-            ORDER BY observation_date
-        """, conn=conn)
-
         series = []
-        hist_daily_medians = []
-        if not df_hist_records.empty:
-            df_hist_records["norm_fare"] = df_hist_records.apply(
-                lambda r: r["price_inr"] / airline_factors_map.get(r["airline"], global_fallback),
-                axis=1
-            )
-            daily_grouped = df_hist_records.groupby("observation_date").agg(
-                norm_mean=("norm_fare", "mean"),
-                norm_median=("norm_fare", "median"),
-                raw_mean=("price_inr", "mean"),
-                count=("price_inr", "count")
-            ).reset_index()
-
-            for r in daily_grouped.itertuples(index=False):
-                normalized_med = round(float(r.norm_median), 2)
-                normalized_mean = round(float(r.norm_mean), 2)
-                raw_val = round(float(r.raw_mean), 2)
-                hist_daily_medians.append(normalized_med)
+        if not df_snap.empty:
+            dates = sorted(df_snap["observation_date"].unique().tolist())
+            for d in dates:
+                sub = df_snap[df_snap["observation_date"] == d]
+                current_med = round(float(sub["price_inr"].median()), 2)
+                current_mean = round(float(sub["price_inr"].mean()), 2)
+                sub_7d = sub[sub["lead_time_bucket"] == "7D"]
+                current_7d_med = round(float(sub_7d["price_inr"].median()), 2) if not sub_7d.empty else current_med
+                current_7d_mean = round(float(sub_7d["price_inr"].mean()), 2) if not sub_7d.empty else current_mean
                 series.append({
-                    "observation_date": str(r.observation_date),
-                    "fare": normalized_med,
-                    "typical_fare": normalized_med,
-                    "daily_median_fare": normalized_med,
-                    "daily_mean_fare": normalized_mean,
-                    "near_term_median": normalized_med,
-                    "near_term_mean": normalized_mean,
-                    "raw_fare": raw_val,
-                    "raw_legacy_fare": raw_val,
-                    "source_class": "historical_reference",
-                    "observation_count": int(r.count),
+                    "observation_date": str(d),
+                    "fare": current_med,
+                    "typical_fare": current_7d_med,
+                    "daily_median_fare": current_med,
+                    "daily_mean_fare": current_mean,
+                    "near_term_median": current_7d_med,
+                    "near_term_mean": current_7d_mean,
+                    "raw_fare": current_med,
+                    "raw_legacy_fare": None,
+                    "source_class": "verified_current",
+                    "observation_count": len(sub),
+                    "change_inr": None,
+                    "change_pct": None,
+                    "dod_change": None,
+                    "dod_change_pct": None,
                 })
 
-        baseline_market_fare = round(float(np.median(hist_daily_medians)), 2) if hist_daily_medians else 7959.18
-
-        # 3. Add verified observation dates (dynamically supports 2026-09-08 and future dates from df_snap)
-        df_verified = df_snap[df_snap["observation_date"] >= "2026-09-08"]
-        verified_dates_list = sorted(df_verified["observation_date"].unique().tolist()) if not df_verified.empty else ["2026-09-08"]
-        consecutive_verified_count = len(verified_dates_list)
-
-        for v_date in verified_dates_list:
-            df_v = df_verified[df_verified["observation_date"] == v_date] if not df_verified.empty else df_snap
-            if df_v.empty:
-                continue
-            v_mean = float(df_v["price_inr"].mean())
-            v_med = float(df_v["price_inr"].median())
-            df_v_7d = df_v[df_v["lead_time_bucket"] == "7D"]
-            v_7d_typical = round(float(df_v_7d["price_inr"].median()), 2) if not df_v_7d.empty else round(v_med, 2)
-            v_7d_average = round(float(df_v_7d["price_inr"].mean()), 2) if not df_v_7d.empty else round(v_mean, 2)
-
-            series.append({
-                "observation_date": v_date,
-                "fare": round(v_med, 2),
-                "typical_fare": v_7d_typical,
-                "daily_median_fare": round(v_med, 2),
-                "daily_mean_fare": round(v_mean, 2),
-                "near_term_median": v_7d_typical,
-                "near_term_mean": v_7d_average,
-                "raw_fare": round(v_med, 2),
-                "raw_legacy_fare": None,
-                "source_class": "verified_current",
-                "observation_count": len(df_v),
-            })
-
-        # Compute period-over-period DoD changes
-        for i in range(len(series)):
-            if i == 0:
-                series[i]["change_inr"] = None
-                series[i]["change_pct"] = None
-                series[i]["dod_change"] = None
-                series[i]["dod_change_pct"] = None
-            else:
-                prev_fare = series[i-1]["fare"]
-                curr_fare = series[i]["fare"]
-                chg = round(curr_fare - prev_fare, 2)
-                pct = round(((curr_fare - prev_fare) / prev_fare) * 100, 2) if prev_fare > 0 else 0.0
+            for i in range(1, len(series)):
+                prev_f = series[i-1]["fare"]
+                curr_f = series[i]["fare"]
+                chg = round(curr_f - prev_f, 2)
+                pct = round(((curr_f - prev_f) / prev_f) * 100, 2) if prev_f > 0 else 0.0
                 series[i]["change_inr"] = chg
                 series[i]["change_pct"] = pct
                 series[i]["dod_change"] = chg
                 series[i]["dod_change_pct"] = pct
 
-        latest_change = series[-1]["change_inr"]
-        latest_pct = series[-1]["change_pct"]
-
+        latest_chg = series[-1]["change_inr"] if series else None
+        latest_pct = series[-1]["change_pct"] if series else None
         if latest_pct is not None:
             if latest_pct > 1.5:
                 trend_dir = "RISING"
@@ -1461,24 +1230,9 @@ def get_route_movement_series(target_route: str = "HYD-DEL") -> dict[str, Any]:
         else:
             trend_dir = "AWAITING_HISTORY"
 
-        # Check if latest movement is verified-to-verified
-        is_verified_to_verified = (
-            len(series) >= 2
-            and series[-1]["source_class"] == "verified_current"
-            and series[-2]["source_class"] == "verified_current"
-        )
-        movement_label = "Verified day-over-day movement" if is_verified_to_verified else "Provisional market movement"
-        movement_type = "VERIFIED_DAY_OVER_DAY" if is_verified_to_verified else "PROVISIONAL_SPLICE"
-
-        # Trend readiness
-        if consecutive_verified_count >= 7:
-            trend_readiness = "READY"
-            display_status = "OFFICIAL 7-DAY BENCHMARK"
-            status_label = "Official market trend"
-        else:
-            trend_readiness = "PROVISIONAL_HISTORICAL_REFERENCE"
-            display_status = "PROVISIONAL HISTORICAL REFERENCE"
-            status_label = movement_label
+        is_verified_to_verified = len(series) >= 2
+        movement_label = "Verified day-over-day movement" if is_verified_to_verified else "Calendar movement is building"
+        movement_type = "VERIFIED_DAY_OVER_DAY" if is_verified_to_verified else "BUILDING_BASELINE"
 
         latest_point = {
             "observation_date": series[-1]["observation_date"],
@@ -1489,20 +1243,12 @@ def get_route_movement_series(target_route: str = "HYD-DEL") -> dict[str, Any]:
             "near_term_mean": series[-1]["near_term_mean"],
             "source_class": series[-1]["source_class"],
             "observation_count": series[-1]["observation_count"],
-            "change_inr": latest_change,
+            "change_inr": latest_chg,
             "change_pct": latest_pct,
             "direction": trend_dir,
             "movement_type": movement_type,
             "movement_label": movement_label,
-        }
-
-        # Latest 7D snapshot metrics for the latest observation date
-        latest_obs_d = series[-1]["observation_date"] if series else None
-        df_latest_snap = get_public_snapshot_dataframe(conn, target_route=route_upper)
-        df_latest_snap_for_d = df_latest_snap[df_latest_snap["observation_date"] == latest_obs_d] if latest_obs_d else df_latest_snap
-        df_latest_7d = df_latest_snap_for_d[df_latest_snap_for_d["lead_time_bucket"] == "7D"] if not df_latest_snap_for_d.empty else pd.DataFrame()
-        latest_7d_typical = round(float(df_latest_7d["price_inr"].median()), 2) if not df_latest_7d.empty else (series[-1]["near_term_median"] if series else None)
-        latest_7d_average = round(float(df_latest_7d["price_inr"].mean()), 2) if not df_latest_7d.empty else (series[-1]["near_term_mean"] if series else None)
+        } if series else None
 
         return {
             "route": route_upper,
@@ -1512,30 +1258,27 @@ def get_route_movement_series(target_route: str = "HYD-DEL") -> dict[str, Any]:
             "primary_market_population": "all-horizon canonical snapshot",
             "daily_median_fare": latest_point["daily_median_fare"] if latest_point else None,
             "daily_mean_fare": latest_point["daily_mean_fare"] if latest_point else None,
-            "near_term_median": latest_7d_typical,
-            "near_term_mean": latest_7d_average,
-            "baseline_market_fare": baseline_market_fare,
-            "status": "PROVISIONAL_SPLICE" if not is_verified_to_verified else "VERIFIED_DAY_OVER_DAY",
-            "display_status": display_status,
-            "trend_readiness": trend_readiness,
-            "status_label": status_label,
+            "near_term_median": series[-1]["near_term_median"] if series else None,
+            "near_term_mean": series[-1]["near_term_mean"] if series else None,
+            "status": "VERIFIED_DAY_OVER_DAY" if is_verified_to_verified else "BUILDING_BASELINE",
+            "display_status": "VERIFIED DAY-OVER-DAY" if is_verified_to_verified else "BUILDING_BASELINE",
+            "trend_readiness": "READY" if len(series) >= 7 else ("VERIFIED_DAY_OVER_DAY" if is_verified_to_verified else "BUILDING_BASELINE"),
+            "status_label": movement_label,
             "movement_label": movement_label,
-            "status_message": "Bridged historical market reference connected to today's verified domestic one-way observations.",
-            "bridge_factor": global_fallback,
-            "bridge_factor_median": matched_stats.get("median_ratio"),
-            "robustness_median_factor": matched_stats.get("median_ratio"),
-            "bridge_method": "airline_specific_empirical_ratio",
-            "bridge_methodology": "airline_empirical_matched_pairs",
-            "empirical_matched_ratio": matched_stats.get("median_ratio"),
-            "matched_pairs_count": matched_stats.get("matched_pairs_count", 0),
-            "unique_itineraries_count": matched_stats.get("unique_itineraries_count", 0),
-            "airline_factors": airline_factors_map,
-            "current_typical_fare": latest_7d_typical,
-            "current_average_fare": latest_7d_average,
-            "latest_change_inr": latest_change,
+            "status_message": "Verified day-over-day market movement." if is_verified_to_verified else "Calendar movement is building — insufficient historical observations.",
+            "bridge_factor": None,
+            "bridge_factor_median": None,
+            "robustness_median_factor": None,
+            "bridge_method": None,
+            "bridge_methodology": None,
+            "empirical_matched_ratio": None,
+            "matched_pairs_count": 0,
+            "current_typical_fare": series[-1]["typical_fare"] if series else None,
+            "current_average_fare": series[-1]["daily_mean_fare"] if series else None,
+            "latest_change_inr": latest_chg,
             "latest_change_pct": latest_pct,
             "trend_direction": trend_dir,
-            "consecutive_verified_dates": consecutive_verified_count,
+            "consecutive_verified_dates": len(series),
             "latest_point": latest_point,
             "series": series,
         }

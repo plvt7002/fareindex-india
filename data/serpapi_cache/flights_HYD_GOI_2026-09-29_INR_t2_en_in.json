@@ -1,0 +1,821 @@
+{
+  "search_metadata": {
+    "id": "6ab29055998aad55ae2dc8f3",
+    "status": "Success",
+    "json_endpoint": "https://serpapi.com/searches/LV7bPSxN1Mk6ZYsSyxlx-VaAjROA7XBIMAWIIWFT4y4/6ab29055998aad55ae2dc8f3.json",
+    "markdown_endpoint": "https://serpapi.com/searches/LV7bPSxN1Mk6ZYsSyxlx-VaAjROA7XBIMAWIIWFT4y4/6ab29055998aad55ae2dc8f3.md",
+    "created_at": "2026-09-22 14:27:33 UTC",
+    "processed_at": "2026-09-22 14:27:33 UTC",
+    "google_flights_url": "https://www.google.com/travel/flights?hl=en&gl=in&curr=INR&tfs=CBwQAhoeEgoyMDI2LTA5LTI5agcIARIDSFlEcgcIARIDR09JQAFIAXABmAEC&tfu=EgIIAQ",
+    "raw_html_file": "https://serpapi.com/searches/LV7bPSxN1Mk6ZYsSyxlx-VaAjROA7XBIMAWIIWFT4y4/6ab29055998aad55ae2dc8f3.html",
+    "prettify_html_file": "https://serpapi.com/searches/LV7bPSxN1Mk6ZYsSyxlx-VaAjROA7XBIMAWIIWFT4y4/6ab29055998aad55ae2dc8f3.prettify",
+    "total_time_taken": 1.88
+  },
+  "search_parameters": {
+    "engine": "google_flights",
+    "hl": "en",
+    "gl": "in",
+    "type": "2",
+    "departure_id": "HYD",
+    "arrival_id": "GOI",
+    "outbound_date": "2026-09-29",
+    "currency": "INR"
+  },
+  "best_flights": [
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 18:20"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-29 19:35"
+          },
+          "duration": 75,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 6329",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 51 kg"
+          ]
+        }
+      ],
+      "total_duration": 75,
+      "carbon_emissions": {
+        "this_flight": 51000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 0
+      },
+      "price": 5254,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZ1kyUlRZek1qa2FDZ2lHS1JBQUdnTkpUbEk0SEhEOEtnPT0iLFtbIkhZRCIsIjIwMjYtMDktMjkiLCJHT0kiLG51bGwsIjZFIiwiNjMyOSJdXV0="
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 14:30"
+          },
+          "arrival_airport": {
+            "name": "Kempegowda International Airport Bengaluru",
+            "id": "BLR",
+            "time": "2026-09-29 15:50"
+          },
+          "duration": 80,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 6405",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 48 kg"
+          ]
+        },
+        {
+          "departure_airport": {
+            "name": "Kempegowda International Airport Bengaluru",
+            "id": "BLR",
+            "time": "2026-09-29 17:40"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-29 18:55"
+          },
+          "duration": 75,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 6168",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 48 kg"
+          ]
+        }
+      ],
+      "layovers": [
+        {
+          "duration": 110,
+          "name": "Kempegowda International Airport Bengaluru",
+          "id": "BLR"
+        }
+      ],
+      "total_duration": 265,
+      "carbon_emissions": {
+        "this_flight": 96000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 88
+      },
+      "price": 5808,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZzAyUlRZME1EVjhOa1UyTVRZNEdnb0lzQzBRQUJvRFNVNVNPQnh3d0M4PSIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkJMUiIsbnVsbCwiNkUiLCI2NDA1Il0sWyJCTFIiLCIyMDI2LTA5LTI5IiwiR09JIixudWxsLCI2RSIsIjYxNjgiXV1d"
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 11:20"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-29 12:35"
+          },
+          "duration": 75,
+          "airplane": "Airbus A320neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 362",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 55 kg"
+          ]
+        }
+      ],
+      "total_duration": 75,
+      "carbon_emissions": {
+        "this_flight": 56000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 10
+      },
+      "price": 6829,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZ1UyUlRNMk1ob0tDSzAxRUFBYUEwbE9VamdjY08wMyIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkdPSSIsbnVsbCwiNkUiLCIzNjIiXV1d"
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 19:40"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-29 20:55"
+          },
+          "duration": 75,
+          "airplane": "Airbus A320neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 984",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 55 kg"
+          ]
+        }
+      ],
+      "total_duration": 75,
+      "carbon_emissions": {
+        "this_flight": 56000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 10
+      },
+      "price": 6829,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZ1UyUlRrNE5Cb0tDSzAxRUFBYUEwbE9VamdjY08wMyIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkdPSSIsbnVsbCwiNkUiLCI5ODQiXV1d"
+    }
+  ],
+  "other_flights": [
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 08:05"
+          },
+          "arrival_airport": {
+            "name": "Kempegowda International Airport Bengaluru",
+            "id": "BLR",
+            "time": "2026-09-29 09:30"
+          },
+          "duration": 85,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 151",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 48 kg"
+          ]
+        },
+        {
+          "departure_airport": {
+            "name": "Kempegowda International Airport Bengaluru",
+            "id": "BLR",
+            "time": "2026-09-29 15:15"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-29 16:35"
+          },
+          "duration": 80,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 6753",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 48 kg"
+          ]
+        }
+      ],
+      "layovers": [
+        {
+          "duration": 345,
+          "name": "Kempegowda International Airport Bengaluru",
+          "id": "BLR"
+        }
+      ],
+      "total_duration": 510,
+      "carbon_emissions": {
+        "this_flight": 96000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 88
+      },
+      "price": 5808,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZ3cyUlRFMU1YdzJSVFkzTlRNYUNnaXdMUkFBR2dOSlRsSTRISERBTHc9PSIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkJMUiIsbnVsbCwiNkUiLCIxNTEiXSxbIkJMUiIsIjIwMjYtMDktMjkiLCJHT0kiLG51bGwsIjZFIiwiNjc1MyJdXV0="
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 21:25"
+          },
+          "arrival_airport": {
+            "name": "Kempegowda International Airport Bengaluru",
+            "id": "BLR",
+            "time": "2026-09-29 22:45"
+          },
+          "duration": 80,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 6505",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 48 kg"
+          ]
+        },
+        {
+          "departure_airport": {
+            "name": "Kempegowda International Airport Bengaluru",
+            "id": "BLR",
+            "time": "2026-09-30 06:05"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-30 07:20"
+          },
+          "duration": 75,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 194",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 48 kg"
+          ]
+        }
+      ],
+      "layovers": [
+        {
+          "duration": 440,
+          "name": "Kempegowda International Airport Bengaluru",
+          "id": "BLR"
+        }
+      ],
+      "total_duration": 595,
+      "carbon_emissions": {
+        "this_flight": 96000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 88
+      },
+      "price": 5808,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZ3cyUlRZMU1EVjhOa1V4T1RRYUNnaXdMUkFBR2dOSlRsSTRISERBTHc9PSIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkJMUiIsbnVsbCwiNkUiLCI2NTA1Il0sWyJCTFIiLCIyMDI2LTA5LTMwIiwiR09JIixudWxsLCI2RSIsIjE5NCJdXV0="
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 09:35"
+          },
+          "arrival_airport": {
+            "name": "Kempegowda International Airport Bengaluru",
+            "id": "BLR",
+            "time": "2026-09-29 10:55"
+          },
+          "duration": 80,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 6066",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 48 kg"
+          ]
+        },
+        {
+          "departure_airport": {
+            "name": "Kempegowda International Airport Bengaluru",
+            "id": "BLR",
+            "time": "2026-09-29 15:15"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-29 16:35"
+          },
+          "duration": 80,
+          "airplane": "Airbus A321neo",
+          "airline": "IndiGo",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+          "travel_class": "Economy",
+          "flight_number": "6E 6753",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "Carbon emissions estimate: 48 kg"
+          ]
+        }
+      ],
+      "layovers": [
+        {
+          "duration": 260,
+          "name": "Kempegowda International Airport Bengaluru",
+          "id": "BLR"
+        }
+      ],
+      "total_duration": 420,
+      "carbon_emissions": {
+        "this_flight": 96000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 88
+      },
+      "price": 6239,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZzAyUlRZd05qWjhOa1UyTnpVekdnb0kzekFRQUJvRFNVNVNPQnh3Z3pNPSIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkJMUiIsbnVsbCwiNkUiLCI2MDY2Il0sWyJCTFIiLCIyMDI2LTA5LTI5IiwiR09JIixudWxsLCI2RSIsIjY3NTMiXV1d"
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 05:50"
+          },
+          "arrival_airport": {
+            "name": "Chhatrapati Shivaji Maharaj International Airport Mumbai",
+            "id": "BOM",
+            "time": "2026-09-29 07:45"
+          },
+          "duration": 115,
+          "airplane": "Airbus A320neo",
+          "airline": "Air India",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/AI.png",
+          "travel_class": "Economy",
+          "flight_number": "AI 2872",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "In-seat USB outlet",
+            "Stream media to your device",
+            "Carbon emissions estimate: 71 kg"
+          ]
+        },
+        {
+          "departure_airport": {
+            "name": "Chhatrapati Shivaji Maharaj International Airport Mumbai",
+            "id": "BOM",
+            "time": "2026-09-29 15:30"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-29 16:50"
+          },
+          "duration": 80,
+          "airplane": "Airbus A320neo",
+          "airline": "Air India",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/AI.png",
+          "travel_class": "Economy",
+          "flight_number": "AI 2745",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "In-seat USB outlet",
+            "Stream media to your device",
+            "Carbon emissions estimate: 55 kg"
+          ]
+        }
+      ],
+      "layovers": [
+        {
+          "duration": 465,
+          "name": "Chhatrapati Shivaji Maharaj International Airport Mumbai",
+          "id": "BOM"
+        }
+      ],
+      "total_duration": 660,
+      "carbon_emissions": {
+        "this_flight": 127000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 149
+      },
+      "price": 10667,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/AI.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZzFCU1RJNE56SjhRVWt5TnpRMUdnb0lxMU1RQUJvRFNVNVNPQnh3bmxjPSIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkJPTSIsbnVsbCwiQUkiLCIyODcyIl0sWyJCT00iLCIyMDI2LTA5LTI5IiwiR09JIixudWxsLCJBSSIsIjI3NDUiXV1d"
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 11:30"
+          },
+          "arrival_airport": {
+            "name": "Chhatrapati Shivaji Maharaj International Airport Mumbai",
+            "id": "BOM",
+            "time": "2026-09-29 13:25"
+          },
+          "duration": 115,
+          "airplane": "Airbus A320neo",
+          "airline": "Air India",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/AI.png",
+          "travel_class": "Economy",
+          "flight_number": "AI 418",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "In-seat USB outlet",
+            "Stream media to your device",
+            "Carbon emissions estimate: 71 kg"
+          ]
+        },
+        {
+          "departure_airport": {
+            "name": "Chhatrapati Shivaji Maharaj International Airport Mumbai",
+            "id": "BOM",
+            "time": "2026-09-29 15:30"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-29 16:50"
+          },
+          "duration": 80,
+          "airplane": "Airbus A320neo",
+          "airline": "Air India",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/AI.png",
+          "travel_class": "Economy",
+          "flight_number": "AI 2745",
+          "legroom": "28 in",
+          "extensions": [
+            "Below average legroom (28 in)",
+            "In-seat USB outlet",
+            "Stream media to your device",
+            "Carbon emissions estimate: 55 kg"
+          ]
+        }
+      ],
+      "layovers": [
+        {
+          "duration": 125,
+          "name": "Chhatrapati Shivaji Maharaj International Airport Mumbai",
+          "id": "BOM"
+        }
+      ],
+      "total_duration": 320,
+      "carbon_emissions": {
+        "this_flight": 127000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 149
+      },
+      "price": 11099,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/AI.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZ3hCU1RReE9IeEJTVEkzTkRVYUNnamJWaEFBR2dOSlRsSTRISERpV2c9PSIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkJPTSIsbnVsbCwiQUkiLCI0MTgiXSxbIkJPTSIsIjIwMjYtMDktMjkiLCJHT0kiLG51bGwsIkFJIiwiMjc0NSJdXV0="
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {
+            "name": "Rajiv Gandhi International Airport",
+            "id": "HYD",
+            "time": "2026-09-29 22:10"
+          },
+          "arrival_airport": {
+            "name": "Bahrain International Airport",
+            "id": "BAH",
+            "time": "2026-09-30 00:10"
+          },
+          "duration": 270,
+          "airplane": "Airbus A320neo",
+          "airline": "Gulf Air",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GF.png",
+          "travel_class": "Economy",
+          "flight_number": "GF 277",
+          "legroom": "30 in",
+          "extensions": [
+            "Average legroom (30 in)",
+            "In-seat power & USB outlets",
+            "On-demand video",
+            "Carbon emissions estimate: 239 kg"
+          ]
+        },
+        {
+          "departure_airport": {
+            "name": "Bahrain International Airport",
+            "id": "BAH",
+            "time": "2026-09-30 15:40"
+          },
+          "arrival_airport": {
+            "name": "Goa Dabolim International Airport",
+            "id": "GOI",
+            "time": "2026-09-30 22:05"
+          },
+          "duration": 235,
+          "airplane": "Airbus A320neo",
+          "airline": "Gulf Air",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GF.png",
+          "travel_class": "Economy",
+          "flight_number": "GF 286",
+          "legroom": "30 in",
+          "extensions": [
+            "Average legroom (30 in)",
+            "Free Wi-Fi",
+            "In-seat power & USB outlets",
+            "On-demand video",
+            "Carbon emissions estimate: 236 kg"
+          ]
+        }
+      ],
+      "layovers": [
+        {
+          "duration": 930,
+          "name": "Bahrain International Airport",
+          "id": "BAH"
+        }
+      ],
+      "total_duration": 1435,
+      "carbon_emissions": {
+        "this_flight": 476000,
+        "typical_for_this_route": 51000,
+        "difference_percent": 833
+      },
+      "price": 60365,
+      "type": "One way",
+      "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/GF.png",
+      "booking_token": "WyJDalJJTW01ek1uVmFhRlp4U1c5QlJTMXpZV2RDUnkwdExTMHRMUzB0ZG5kaVpISXhNMEZCUVVGQlIzRjVhMFpWVG0xRVpVMUJFZ3RIUmpJM04zeEhSakk0TmhvTENNM1hBeEFBR2dOSlRsSTRISERXN1FNPSIsW1siSFlEIiwiMjAyNi0wOS0yOSIsIkJBSCIsbnVsbCwiR0YiLCIyNzciXSxbIkJBSCIsIjIwMjYtMDktMzAiLCJHT0kiLG51bGwsIkdGIiwiMjg2Il1dXQ=="
+    }
+  ],
+  "price_insights": {
+    "lowest_price": 5254,
+    "price_level": "typical",
+    "typical_price_range": [
+      4200,
+      6000
+    ],
+    "price_history": [
+      [
+        1786645800,
+        4758
+      ],
+      [
+        1786732200,
+        4758
+      ],
+      [
+        1786818600,
+        4758
+      ],
+      [
+        1786905000,
+        4653
+      ],
+      [
+        1786991400,
+        4653
+      ],
+      [
+        1787077800,
+        4653
+      ],
+      [
+        1787164200,
+        4653
+      ],
+      [
+        1787250600,
+        4653
+      ],
+      [
+        1787337000,
+        4653
+      ],
+      [
+        1787423400,
+        4653
+      ],
+      [
+        1787509800,
+        4653
+      ],
+      [
+        1787596200,
+        4653
+      ],
+      [
+        1787682600,
+        4653
+      ],
+      [
+        1787769000,
+        4653
+      ],
+      [
+        1787855400,
+        4653
+      ],
+      [
+        1787941800,
+        4653
+      ],
+      [
+        1788028200,
+        4653
+      ],
+      [
+        1788114600,
+        6411
+      ],
+      [
+        1788201000,
+        6597
+      ],
+      [
+        1788287400,
+        5989
+      ],
+      [
+        1788373800,
+        5989
+      ],
+      [
+        1788460200,
+        6239
+      ],
+      [
+        1788546600,
+        6712
+      ],
+      [
+        1788633000,
+        6712
+      ],
+      [
+        1788719400,
+        6304
+      ],
+      [
+        1788805800,
+        5989
+      ],
+      [
+        1788892200,
+        5989
+      ],
+      [
+        1788978600,
+        5989
+      ],
+      [
+        1789065000,
+        5989
+      ],
+      [
+        1789151400,
+        5674
+      ],
+      [
+        1789237800,
+        5674
+      ],
+      [
+        1789324200,
+        5044
+      ],
+      [
+        1789410600,
+        5808
+      ],
+      [
+        1789497000,
+        5808
+      ],
+      [
+        1789583400,
+        5808
+      ],
+      [
+        1789669800,
+        5808
+      ],
+      [
+        1789756200,
+        5569
+      ],
+      [
+        1789842600,
+        4939
+      ],
+      [
+        1789929000,
+        4204
+      ],
+      [
+        1790015400,
+        5254
+      ]
+    ]
+  },
+  "airports": [
+    {
+      "departure": [
+        {
+          "airport": {
+            "id": "HYD",
+            "name": "Rajiv Gandhi International Airport"
+          },
+          "city": "Hyderabad",
+          "country": "India",
+          "country_code": "IN",
+          "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZYggVzDR3bBmFCtOJtoteR8sbLdQi7YWrBt50w4pdtQCKQZj7EtTiNrLM6eUDaJqmo7-_seEsSyuA0g",
+          "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSguPRMPWcZhK7VZ5lMPYaqwY8CakryY29B4zKHqfsL5SWkeNjLUBPR7wUiWA6dS2QMNQVpinMxrpUoC14UvLkgJ9aaekuKY1YotySb4vI"
+        }
+      ],
+      "arrival": [
+        {
+          "airport": {
+            "id": "GOI",
+            "name": "Goa Dabolim International Airport"
+          },
+          "city": "Goa",
+          "country": "India",
+          "country_code": "IN",
+          "image": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSV9ZBaJnlVAyvxpnpLgJSQcw8iTKl-RmtMpyb-V1vzMbHVJMdMyzus4HNee9WyA8GYbl0VlSpmxXeN8A",
+          "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTua5WXy2lHX1J7yNO9J0DpWHP2z9NzByWFLCiCQqzgt4DsYURWFHTkRpwW0zr4nQMQUrX8m6Hk3OlSIZVmCZczvsIlrrx4sHDLXST1fmU"
+        }
+      ]
+    }
+  ]
+}

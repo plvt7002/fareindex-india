@@ -10,6 +10,7 @@ DB_PATH = (BASE_DIR / DATABASE_PATH).resolve()
 
 TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL", "").strip()
 TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN", "").strip()
+SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY", "").strip()
 
 def is_turso_configured() -> bool:
     """Returns True ONLY when BOTH TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are present and non-empty."""

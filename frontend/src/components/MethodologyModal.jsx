@@ -41,27 +41,27 @@ export function MethodologyModal({ isOpen, onClose }) {
           {/* Plain English Mission */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 text-slate-900 font-bold text-xs mb-1">
-              <span>Understand what an airfare means</span>
+              <span>Don&apos;t just find a fare. Understand what the fare means.</span>
             </div>
             <p className="m-0 text-slate-600 text-xs leading-relaxed">
-              FareIndex India is not an airline booking website. It is an independent market intelligence tool designed to help travelers understand typical airfares, price movements, and booking behaviour.
+              FareIndex India is not a booking engine. It adds an independent Indian-market reference frame to live airfare signals, allowing travelers to benchmark live prices against empirical domestic distributions.
             </p>
           </div>
 
-          {/* 5 Simple Principles */}
+          {/* 7 Simple Steps */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3 flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-slate-700" />
-              5 Core Principles
+              How It Works: The 7-Step Workflow
             </h4>
             
             <ol className="space-y-2.5 pl-0 list-none m-0">
               <li className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-mono font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">1</span>
                 <div>
-                  <strong className="text-slate-900 block text-xs">Fares are collected systematically</strong>
+                  <strong className="text-slate-900 block text-xs">Collect observed domestic one-way fares</strong>
                   <span className="text-slate-600">
-                    Real domestic airfares for 1 adult in Economy are collected regularly from public flight search engines across major domestic routes.
+                    Real domestic airfares for 1 adult in Economy are collected systematically across major domestic routes and advance booking horizons.
                   </span>
                 </div>
               </li>
@@ -69,9 +69,9 @@ export function MethodologyModal({ isOpen, onClose }) {
               <li className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-mono font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">2</span>
                 <div>
-                  <strong className="text-slate-900 block text-xs">Invalid and non-domestic itineraries are filtered</strong>
+                  <strong className="text-slate-900 block text-xs">Validate and normalize observations</strong>
                   <span className="text-slate-600">
-                    Itineraries with international transit stops (such as routes connecting via Colombo or the Gulf) are strictly filtered out to ensure the index measures genuine Indian domestic air travel only.
+                    Itineraries with international transit stops or non-comparable cabin configurations are filtered out to ensure genuine domestic travel only.
                   </span>
                 </div>
               </li>
@@ -79,9 +79,9 @@ export function MethodologyModal({ isOpen, onClose }) {
               <li className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-mono font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">3</span>
                 <div>
-                  <strong className="text-slate-900 block text-xs">Typical fare uses the median</strong>
+                  <strong className="text-slate-900 block text-xs">Deduplicate repeated scraper runs</strong>
                   <span className="text-slate-600">
-                    The typical fare represents where the central cluster of bookable fares sits (median). Unlike arithmetic averages, the median is not distorted by extreme luxury seats or last-minute peak fares.
+                    Repeated scraper queries for the same travel date on the same observation day are consolidated to prevent artificial statistical overweighting.
                   </span>
                 </div>
               </li>
@@ -89,9 +89,9 @@ export function MethodologyModal({ isOpen, onClose }) {
               <li className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-mono font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">4</span>
                 <div>
-                  <strong className="text-slate-900 block text-xs">Fare movement uses comparable market observations</strong>
+                  <strong className="text-slate-900 block text-xs">Build route-level distributions</strong>
                   <span className="text-slate-600">
-                    Movement measures whether average observed airfares are rising or falling across calendar observation dates. Unobserved dates are preserved without fabricating missing points.
+                    Empirical quantiles (P25, Median, P75) are calibrated across verified canonical datasets to define normal market price ranges.
                   </span>
                 </div>
               </li>
@@ -99,9 +99,29 @@ export function MethodologyModal({ isOpen, onClose }) {
               <li className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-mono font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">5</span>
                 <div>
-                  <strong className="text-slate-900 block text-xs">Booking horizons are kept separate</strong>
+                  <strong className="text-slate-900 block text-xs">Retrieve live Google Flights signal via SerpApi</strong>
                   <span className="text-slate-600">
-                    Advance purchase windows (7D, 14D, 21D, 30D, 60D) are evaluated independently to show how airfare pricing changes based on how far ahead you travel.
+                    Real-time flight search results and Google&apos;s own typical search range are queried securely on demand.
+                  </span>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-mono font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">6</span>
+                <div>
+                  <strong className="text-slate-900 block text-xs">Compare the live fare against both reference frames</strong>
+                  <span className="text-slate-600">
+                    The live fare is simultaneously evaluated against Google&apos;s typical search range and FareIndex&apos;s verified domestic distribution.
+                  </span>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-mono font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">7</span>
+                <div>
+                  <strong className="text-slate-900 block text-xs">Explain agreement or divergence transparently</strong>
+                  <span className="text-slate-600">
+                    Deterministic comparison surfaces whether the signals agree or diverge, explaining the underlying difference in reference datasets.
                   </span>
                 </div>
               </li>
@@ -115,7 +135,7 @@ export function MethodologyModal({ isOpen, onClose }) {
               <span>Descriptive Market Intelligence Only</span>
             </div>
             <p className="text-slate-500 text-[11px] m-0">
-              Fare position (LOW / NORMAL / HIGH) is purely descriptive based on statistical percentiles. FareIndex India provides no buying advice, wait predictions, or booking transactions.
+              Fare position (LOW / NORMAL / HIGH) is purely descriptive based on statistical percentiles. FareIndex India provides no buying advice, price predictions, or booking transactions.
             </p>
           </div>
         </div>

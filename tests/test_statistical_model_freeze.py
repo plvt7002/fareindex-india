@@ -50,44 +50,28 @@ class TestStatisticalModelFreeze:
             """).fetchone()
             assert row is not None
             assert row["median_fare"] == 8731.50
-            assert row["baseline_fare"] == 7959.18
-            expected_idx = round((8731.50 / 7959.18) * 100, 2)
-            assert row["index_value"] == expected_idx  # 109.70
+            assert row["baseline_fare"] == 8617.50
+            expected_idx = round((8731.50 / 8617.50) * 100, 2)
+            assert row["index_value"] == expected_idx  # 101.32
         finally:
             conn.close()
 
-    def test_4_baseline_uses_historical_daily_market_medians(self):
-        """Rule 4: Baseline is the median of usable historical daily market medians (unweighted)."""
-        mov = get_route_movement_series("HYD-DEL")
-        assert mov["baseline_market_fare"] == 7959.18
+    def test_4_baseline_uses_canonical_one_way_daily_market_medians(self):
+        """Rule 4: Baseline is the median of verified one-way daily market medians (unweighted)."""
+        summary = get_routes_summary("HYD-DEL")
+        assert len(summary) == 1
+        assert summary[0]["baseline_fare"] == 8617.50
 
-    def test_5_each_date_contributes_once_to_baseline(self):
-        """Rule 5: Each historical observation date contributes exactly one unweighted median."""
+    def test_5_each_verified_date_contributes_once_to_baseline(self):
+        """Rule 5: Each verified observation date contributes exactly one unweighted median."""
         conn = connect()
         try:
-            matched_stats = calculate_empirical_matched_pairs_ratio(route="HYD-DEL", observation_date="2026-09-08", conn=conn)
-            global_fallback = matched_stats.get("global_fallback_factor") or 1.8960
-            airline_factors_map = {}
-            for air_k, air_v in (matched_stats.get("airline_factors") or {}).items():
-                if air_v.get("is_eligible"):
-                    airline_factors_map[air_k] = air_v.get("effective_factor", global_fallback)
-
-            df_hist = pd.read_sql_query("""
-                SELECT id, route, airline, price_inr, travel_date, SUBSTR(search_timestamp, 1, 10) as observation_date
-                FROM raw_prices
-                WHERE route = 'HYD-DEL'
-                  AND source != 'DEMO - NOT LIVE'
-                  AND (fare_type = 'ROUND_TRIP_LEGACY' OR fare_type = 'UNKNOWN')
-                  AND SUBSTR(search_timestamp, 1, 10) < '2026-09-08'
-                ORDER BY observation_date
-            """, conn)
-
-            df_hist["norm_fare"] = df_hist.apply(lambda r: r["price_inr"] / airline_factors_map.get(r["airline"], global_fallback), axis=1)
-            daily_medians = [round(float(g["norm_fare"].median()), 2) for _, g in df_hist.groupby("observation_date")]
-            assert len(daily_medians) == 5  # 5 distinct historical dates
-            assert daily_medians == [7917.09, 7917.09, 7959.18, 7959.18, 8701.44]
+            df_snap = get_public_snapshot_dataframe(conn, target_route="HYD-DEL")
+            daily_medians = [round(float(g["price_inr"].median()), 2) for _, g in df_snap.groupby("observation_date")]
+            assert len(daily_medians) == 2  # 2 verified observation dates (Sep 8, Sep 9)
+            assert daily_medians == [8503.50, 8731.50]
             computed_baseline = round(float(np.median(daily_medians)), 2)
-            assert computed_baseline == 7959.18
+            assert computed_baseline == 8617.50
         finally:
             conn.close()
 
@@ -188,21 +172,20 @@ class TestStatisticalModelFreeze:
         data = res.json()
         assert "Provisional" in data["index_name"]
 
-    def test_19_historical_bridge_does_not_mix_old_means_with_new_medians(self):
-        """Rule 19: Historical reference series uses normalized daily medians."""
+    def test_19_canonical_movement_uses_verified_daily_medians(self):
+        """Rule 19: Movement series uses verified daily medians for all dates."""
         mov = get_route_movement_series("HYD-DEL")
-        hist_points = [s for s in mov["series"] if s["source_class"] == "historical_reference"]
-        for p in hist_points:
+        for p in mov["series"]:
             assert p["fare"] == p["daily_median_fare"]
-            assert p["fare"] != p["daily_mean_fare"] or p["observation_count"] < 5
+            assert p["source_class"] == "verified_current"
 
-    def test_20_old_15268_baseline_cannot_enter_current_index(self):
-        """Rule 20: Old ₹15,268.36 baseline is nowhere in active index values."""
+    def test_20_canonical_baseline_in_index_values(self):
+        """Rule 20: Verified baseline is stored in index_values without legacy distortion."""
         conn = connect()
         try:
             rows = conn.execute("SELECT baseline_fare FROM index_values WHERE route = 'HYD-DEL'").fetchall()
             for r in rows:
-                assert r["baseline_fare"] == 7959.18
+                assert r["baseline_fare"] == 8617.50
                 assert r["baseline_fare"] != 15268.36
         finally:
             conn.close()

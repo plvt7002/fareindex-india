@@ -93,11 +93,11 @@ export function FareMovementChart({
   let insightSentence = 'Market movement is currently tracking within a stable range across observed dates.';
   if (latestMovement?.change_pct !== null && latestMovement?.change_pct !== undefined) {
     const absChg = formatINR(Math.abs(latestMovement.change_inr));
-    const pctStr = formatPct(Math.abs(latestMovement.change_pct));
+    const pctStr = formatPct(latestMovement.change_pct);
     if (latestMovement.direction === 'RISING') {
-      insightSentence = `Typical fare rose ${absChg} (+${pctStr}) from the previous verified observation.`;
+      insightSentence = `Typical fare rose ${absChg} (${pctStr}) from the previous verified observation.`;
     } else if (latestMovement.direction === 'FALLING') {
-      insightSentence = `Typical fare fell ${absChg} (-${pctStr}) from the previous verified observation.`;
+      insightSentence = `Typical fare fell ${absChg} (${pctStr}) from the previous verified observation.`;
     } else {
       insightSentence = `Typical fare remained stable compared with the previous verified observation.`;
     }
@@ -115,13 +115,13 @@ export function FareMovementChart({
               </h2>
               <span
                 className="text-xs font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-medium cursor-help"
-                title="Current fares are verified. More observation dates are being collected to build a stronger historical trend."
+                title="Current fares are verified. More observation dates are being collected to expand the multi-day movement trend."
               >
-                Building history
+                Building series
               </span>
             </div>
             <p className="text-xs text-slate-500 m-0 mt-1">
-              How the typical fare has changed across observation dates.
+              Daily median market fare · 1 verified observation date
             </p>
           </div>
         </div>
@@ -156,7 +156,7 @@ export function FareMovementChart({
             Fare Movement
           </h2>
           <p className="text-xs text-slate-500 mt-1 m-0">
-            How the typical fare has changed across observation dates.
+            Daily median market fare · {series.length} verified observation dates
           </p>
         </div>
       </div>
@@ -211,12 +211,12 @@ export function FareMovementChart({
       </div>
 
       {/* Minimal Footer Note */}
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+      <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 gap-1.5">
         <div className="flex items-center gap-1.5 text-[11px]">
           <ShieldCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <span>Verified domestic one-way observations.</span>
+          <span>Daily aggregate time series · Each point is the median across all lead-time horizons for that observation date.</span>
         </div>
-        <span className="font-mono text-[11px]">Fare Movement</span>
+        <span className="font-mono text-[11px] shrink-0">Fare Movement</span>
       </div>
     </div>
   );

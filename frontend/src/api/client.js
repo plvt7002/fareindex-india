@@ -75,4 +75,8 @@ export const api = {
   getScrapeStatus: () => request('/api/admin/scrape-status'),
   scrapeNow: () => request('/api/admin/scrape-now', { method: 'POST' }),
   rebuildIndex: () => request('/api/admin/rebuild-index', { method: 'POST' }),
+
+  // Second Opinion (Google Flights vs FareIndex Domestic Distribution)
+  getSecondOpinion: (origin, destination, outboundDate) =>
+    request(`/api/second-opinion?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&outbound_date=${encodeURIComponent(outboundDate)}`),
 };
